@@ -10,6 +10,11 @@ type CreateUserResult = {
   message: string;
 };
 
+type UpdateUserResult = {
+  ok: boolean;
+  message: string;
+};
+
 const allowedRoles: Role[] = ["operator", "admin", "owner"];
 
 function sanitize(value: FormDataEntryValue | null) {
@@ -70,4 +75,41 @@ export async function createInternalUserAction(
   revalidatePath("/admin");
 
   return { ok: true, message: "Usuario interno creado correctamente." };
+}
+
+export async function updateInternalUserAction(
+  _prevState: UpdateUserResult,
+  formData: FormData,
+): Promise<UpdateUserResult> {
+  const actor = await requireRole(["admin"]);
+  const userId = sanitize(formData.get("user_id"));
+  const role = sanitize(formData.get("role"));
+  const active = formData.get("active") === "on";
+
+  if (!userId || !isValidRole(role)) {
+    return { ok: false, message: "Datos invalidos para actualizar el usuario." };
+  }
+
+  if (userId === actor.id && (role !== "admin" || !active)) {
+    return {
+      ok: false,
+      message: "No puedes desactivarte ni quitarte el rol admin desde tu propia sesion.",
+    };
+  }
+
+  const adminClient = createSupabaseAdminClient();
+  const { data: updatedProfile, error: updateProfileError } = await adminClient
+    .from("profiles")
+    .update({ role, active })
+    .eq("id", userId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateProfileError || !updatedProfile) {
+    return { ok: false, message: "No se pudo actualizar el perfil." };
+  }
+
+  revalidatePath("/admin");
+
+  return { ok: true, message: "Usuario actualizado correctamente." };
 }

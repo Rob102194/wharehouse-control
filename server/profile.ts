@@ -19,6 +19,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   if (error) {
+    console.error("Error loading profile:", error);
     return null;
   }
 

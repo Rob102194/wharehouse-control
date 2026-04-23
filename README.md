@@ -38,6 +38,7 @@ Copiar `.env.example` a `.env.local` y completar valores reales.
 - El modulo `Admin` incluye alta de usuario interno.
 - La accion crea primero el usuario en Supabase Auth y luego inserta `profiles`.
 - Si falla la insercion en `profiles`, se revierte el usuario de Auth para evitar datos inconsistentes.
+- La misma pantalla permite editar `role` y `active` de usuarios existentes.
 
 ## Scripts
 

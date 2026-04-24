@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createSupabaseServerActionClient } from "@/supabase/server-action";
 import { createSupabaseServerClient } from "@/supabase/server";
 
 export async function getCurrentUser() {
@@ -21,6 +22,6 @@ export async function requireUser() {
 }
 
 export async function signOut() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerActionClient();
   await supabase.auth.signOut();
 }

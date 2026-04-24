@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getHomePathForRole } from "@/server/profile";
 import { createSupabaseAdminClient } from "@/supabase/admin";
-import { createSupabaseServerClient } from "@/supabase/server";
+import { createSupabaseServerActionClient } from "@/supabase/server-action";
 import type { Role } from "@/types/domain";
 
 export type LoginActionState = {
@@ -29,7 +29,7 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
     return { error: "Credenciales invalidas" };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerActionClient();
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: profile.email,

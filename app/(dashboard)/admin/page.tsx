@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@/server/profile";
 import { CreateUserForm } from "@/app/(dashboard)/admin/create-user-form";
 import { UsersManagement } from "@/app/(dashboard)/admin/users-management";
@@ -26,7 +27,32 @@ export default async function AdminPage() {
   return (
     <section className="space-y-4">
       <h2 className="text-2xl font-semibold text-slate-900">Administracion</h2>
-      <p className="text-slate-600">Gestion inicial de usuarios internos para el MVP.</p>
+      <p className="text-slate-600">Centro de gestion administrativa para usuarios y catalogos del MVP.</p>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <Link
+          href="/admin/warehouses"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:bg-brand-50/30"
+        >
+          <p className="text-base font-semibold text-slate-900">Almacenes</p>
+          <p className="mt-1 text-sm text-slate-600">Configura los almacenes fisicos usados en operaciones y transferencias.</p>
+        </Link>
+        <Link
+          href="/admin/products"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:bg-brand-50/30"
+        >
+          <p className="text-base font-semibold text-slate-900">Productos base</p>
+          <p className="mt-1 text-sm text-slate-600">Gestiona los productos conceptuales que serviran como base para variantes operativas.</p>
+        </Link>
+        <Link
+          href="/admin/product-variants"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:bg-brand-50/30"
+        >
+          <p className="text-base font-semibold text-slate-900">Variantes operativas</p>
+          <p className="mt-1 text-sm text-slate-600">Configura las presentaciones reales que se mueven en inventario.</p>
+        </Link>
+      </section>
+
       <CreateUserForm />
       <UsersManagement users={users ?? []} currentAdminId={currentAdmin.id} />
     </section>

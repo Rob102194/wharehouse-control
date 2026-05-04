@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createAdjustmentAction,
@@ -10,14 +10,14 @@ import {
   receiveTransferAction,
   type OperationActionState,
 } from "@/app/(dashboard)/operations/actions";
-import type { TransferInTransit } from "@/types/movement";
+import type { TransferInTransitWithItems } from "@/types/movement";
 import type { ProductVariant } from "@/types/product-variant";
 import type { Warehouse } from "@/types/warehouse";
 
 type OperationsConsoleProps = {
   warehouses: Warehouse[];
   variants: ProductVariant[];
-  inTransitTransfers: TransferInTransit[];
+  inTransitTransfers: TransferInTransitWithItems[];
   canCreateAdjustment: boolean;
 };
 
@@ -25,6 +25,8 @@ type LineItemDraft = {
   id: string;
   productVariantId: string;
   quantity: string;
+  query: string;
+  dispatchedQuantity?: number;
 };
 
 const initialState: OperationActionState = {
@@ -52,6 +54,15 @@ function ActionFeedback({ state }: { state: OperationActionState }) {
   }
 
   return <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>;
+}
+
+function parseQuantity(value: string) {
+  const quantity = Number(value);
+  if (Number.isNaN(quantity)) {
+    return null;
+  }
+
+  return quantity;
 }
 
 function ReferenceLists({ warehouses, variants, inTransitTransfers }: Omit<OperationsConsoleProps, "canCreateAdjustment">) {
@@ -139,7 +150,7 @@ function LineItemsBuilder({
   quantityLabel: string;
   quantityMin: number;
 }) {
-  const [items, setItems] = useState<LineItemDraft[]>([{ id: crypto.randomUUID(), productVariantId: "", quantity: "" }]);
+  const [items, setItems] = useState<LineItemDraft[]>([{ id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
   const variantOptions = useMemo(
     () =>
       variants.map((variant) => ({
@@ -148,16 +159,17 @@ function LineItemsBuilder({
       })),
     [variants],
   );
+  const variantLabelById = useMemo(() => new Map(variantOptions.map((option) => [option.id, option.label])), [variantOptions]);
 
   const addRow = () => {
-    setItems((prev) => [...prev, { id: crypto.randomUUID(), productVariantId: "", quantity: "" }]);
+    setItems((prev) => [...prev, { id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
   };
 
   const removeRow = (id: string) => {
     setItems((prev) => (prev.length > 1 ? prev.filter((item) => item.id !== id) : prev));
   };
 
-  const updateRow = (id: string, field: "productVariantId" | "quantity", value: string) => {
+  const updateRow = (id: string, field: "productVariantId" | "quantity" | "query", value: string) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
@@ -167,17 +179,32 @@ function LineItemsBuilder({
         <div key={item.id} className="grid gap-2 rounded-lg border border-slate-200 p-3 md:grid-cols-[1fr_150px_auto] md:items-end">
           <label className="space-y-1 text-sm">
             <span className="font-medium text-slate-700">Variante #{index + 1}</span>
+            <input
+              type="text"
+              value={item.query}
+              onChange={(event) => updateRow(item.id, "query", event.target.value)}
+              placeholder="Buscar por nombre o SKU"
+              className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            />
             <select
               value={item.productVariantId}
-              onChange={(event) => updateRow(item.id, "productVariantId", event.target.value)}
+              onChange={(event) => {
+                const selectedId = event.target.value;
+                updateRow(item.id, "productVariantId", selectedId);
+                if (selectedId) {
+                  updateRow(item.id, "query", variantLabelById.get(selectedId) ?? "");
+                }
+              }}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
               <option value="">Selecciona variante</option>
-              {variantOptions.map((option) => (
+              {variantOptions
+                .filter((option) => option.label.toLowerCase().includes(item.query.toLowerCase()))
+                .map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
                 </option>
-              ))}
+                ))}
             </select>
           </label>
 
@@ -216,8 +243,15 @@ function LineItemsBuilder({
   );
 }
 
-function ReceiptItemsBuilder({ variants }: { variants: ProductVariant[] }) {
-  const [items, setItems] = useState<LineItemDraft[]>([{ id: crypto.randomUUID(), productVariantId: "", quantity: "" }]);
+function ReceiptItemsBuilder({
+  variants,
+  items,
+  setItems,
+}: {
+  variants: ProductVariant[];
+  items: LineItemDraft[];
+  setItems: Dispatch<SetStateAction<LineItemDraft[]>>;
+}) {
   const variantOptions = useMemo(
     () =>
       variants.map((variant) => ({
@@ -226,16 +260,17 @@ function ReceiptItemsBuilder({ variants }: { variants: ProductVariant[] }) {
       })),
     [variants],
   );
+  const variantLabelById = useMemo(() => new Map(variantOptions.map((option) => [option.id, option.label])), [variantOptions]);
 
   const addRow = () => {
-    setItems((prev) => [...prev, { id: crypto.randomUUID(), productVariantId: "", quantity: "" }]);
+    setItems((prev) => [...prev, { id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
   };
 
   const removeRow = (id: string) => {
     setItems((prev) => (prev.length > 1 ? prev.filter((item) => item.id !== id) : prev));
   };
 
-  const updateRow = (id: string, field: "productVariantId" | "quantity", value: string) => {
+  const updateRow = (id: string, field: "productVariantId" | "quantity" | "query", value: string) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
@@ -245,17 +280,32 @@ function ReceiptItemsBuilder({ variants }: { variants: ProductVariant[] }) {
         <div key={item.id} className="grid gap-2 rounded-lg border border-slate-200 p-3 md:grid-cols-[1fr_180px_auto] md:items-end">
           <label className="space-y-1 text-sm">
             <span className="font-medium text-slate-700">Variante recibida #{index + 1}</span>
+            <input
+              type="text"
+              value={item.query}
+              onChange={(event) => updateRow(item.id, "query", event.target.value)}
+              placeholder="Buscar por nombre o SKU"
+              className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            />
             <select
               value={item.productVariantId}
-              onChange={(event) => updateRow(item.id, "productVariantId", event.target.value)}
+              onChange={(event) => {
+                const selectedId = event.target.value;
+                updateRow(item.id, "productVariantId", selectedId);
+                if (selectedId) {
+                  updateRow(item.id, "query", variantLabelById.get(selectedId) ?? "");
+                }
+              }}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
               <option value="">Selecciona variante</option>
-              {variantOptions.map((option) => (
+              {variantOptions
+                .filter((option) => option.label.toLowerCase().includes(item.query.toLowerCase()))
+                .map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
                 </option>
-              ))}
+                ))}
             </select>
           </label>
 
@@ -269,6 +319,9 @@ function ReceiptItemsBuilder({ variants }: { variants: ProductVariant[] }) {
               onChange={(event) => updateRow(item.id, "quantity", event.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
+            <span className="text-xs text-slate-500">
+              Despachado: {item.dispatchedQuantity?.toFixed(3) ?? "-"}
+            </span>
           </label>
 
           <button
@@ -428,18 +481,108 @@ function TransferForm({ warehouses, variants }: { warehouses: Warehouse[]; varia
   );
 }
 
-function ReceiveTransferForm({ variants, inTransitTransfers }: { variants: ProductVariant[]; inTransitTransfers: TransferInTransit[] }) {
+function ReceiveTransferForm({
+  variants,
+  inTransitTransfers,
+}: {
+  variants: ProductVariant[];
+  inTransitTransfers: TransferInTransitWithItems[];
+}) {
   const [state, formAction] = useActionState(receiveTransferAction, initialState);
+  const [selectedTransferId, setSelectedTransferId] = useState("");
+  const [items, setItems] = useState<LineItemDraft[]>([{ id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
+  const [clientError, setClientError] = useState("");
+
+  const selectedTransfer = useMemo(
+    () => inTransitTransfers.find((transfer) => transfer.id === selectedTransferId) ?? null,
+    [inTransitTransfers, selectedTransferId],
+  );
+
+  useEffect(() => {
+    if (!selectedTransfer || selectedTransfer.items.length === 0) {
+      setItems([{ id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
+      return;
+    }
+
+    setItems(
+      selectedTransfer.items.map((item) => ({
+        id: crypto.randomUUID(),
+        productVariantId: item.product_variant_id,
+        quantity: String(item.quantity),
+        query: `${item.product_variant_name}${item.sku ? ` (${item.sku})` : ""}`,
+        dispatchedQuantity: item.quantity,
+      })),
+    );
+  }, [selectedTransfer]);
+
+  const receiptValidation = useMemo(() => {
+    if (!selectedTransfer) {
+      return { valid: false, message: "Selecciona una transferencia en transito." };
+    }
+
+    if (items.length === 0) {
+      return { valid: false, message: "Debes incluir al menos una linea de recepcion." };
+    }
+
+    const invalidLine = items.find((item) => {
+      if (!item.productVariantId) {
+        return true;
+      }
+
+      const receivedQty = parseQuantity(item.quantity);
+      if (receivedQty === null || receivedQty < 0) {
+        return true;
+      }
+
+      if (item.dispatchedQuantity !== undefined && receivedQty > item.dispatchedQuantity) {
+        return true;
+      }
+
+      return false;
+    });
+
+    if (invalidLine) {
+      return {
+        valid: false,
+        message: "Revisa las lineas: variante obligatoria, cantidad >= 0 y no mayor a la despachada.",
+      };
+    }
+
+    return { valid: true, message: "" };
+  }, [items, selectedTransfer]);
+
+  const totals = useMemo(() => {
+    const dispatched = items.reduce((acc, item) => acc + (item.dispatchedQuantity ?? 0), 0);
+    const received = items.reduce((acc, item) => acc + Math.max(parseQuantity(item.quantity) ?? 0, 0), 0);
+    return {
+      dispatched,
+      received,
+      difference: dispatched - received,
+    };
+  }, [items]);
 
   return (
-    <form action={formAction} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        if (!receiptValidation.valid) {
+          event.preventDefault();
+          setClientError(receiptValidation.message);
+          return;
+        }
+
+        setClientError("");
+      }}
+      className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+    >
       <h3 className="text-base font-semibold text-slate-900">Recepcion de transferencia</h3>
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Transferencia en transito</span>
         <select
           name="movement_id"
           required
-          defaultValue=""
+          value={selectedTransferId}
+          onChange={(event) => setSelectedTransferId(event.target.value)}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         >
           <option value="" disabled>
@@ -452,7 +595,20 @@ function ReceiveTransferForm({ variants, inTransitTransfers }: { variants: Produ
           ))}
         </select>
       </label>
-      <ReceiptItemsBuilder variants={variants} />
+      {selectedTransfer ? (
+        <div className="space-y-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <p>
+            Origen: {selectedTransfer.origin_warehouse_name ?? selectedTransfer.origin_warehouse_id} | Destino:{" "}
+            {selectedTransfer.destination_warehouse_name ?? selectedTransfer.destination_warehouse_id}
+          </p>
+          <p>
+            Lineas: {selectedTransfer.items.length} | Despachado total: {totals.dispatched.toFixed(3)} | Recibido total: {totals.received.toFixed(3)}
+          </p>
+          {selectedTransfer.notes ? <p>Nota de despacho: {selectedTransfer.notes}</p> : null}
+          {totals.difference > 0 ? <p className="text-amber-700">Diferencia pendiente: {totals.difference.toFixed(3)}</p> : null}
+        </div>
+      ) : null}
+      <ReceiptItemsBuilder variants={variants} items={items} setItems={setItems} />
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota de incidente (opcional)</span>
         <input
@@ -461,6 +617,7 @@ function ReceiveTransferForm({ variants, inTransitTransfers }: { variants: Produ
         />
       </label>
       <ActionFeedback state={state} />
+      {clientError ? <p className="text-sm text-red-600">{clientError}</p> : null}
       <SubmitButton label="Confirmar recepcion" pendingLabel="Confirmando recepcion..." />
     </form>
   );

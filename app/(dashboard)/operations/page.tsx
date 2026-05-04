@@ -1,5 +1,5 @@
 import { requireRole } from "@/server/profile";
-import { listTransfersInTransit } from "@/server/movements";
+import { listTransfersInTransitWithItems } from "@/server/movements";
 import { listActiveProductVariants } from "@/server/product-variants";
 import { listActiveWarehouses } from "@/server/warehouses";
 import { OperationsConsole } from "@/app/(dashboard)/operations/operations-console";
@@ -9,7 +9,7 @@ export default async function OperationsPage() {
   const [warehouses, variants, inTransitTransfers] = await Promise.all([
     listActiveWarehouses(),
     listActiveProductVariants(),
-    listTransfersInTransit(),
+    listTransfersInTransitWithItems(),
   ]);
 
   return (

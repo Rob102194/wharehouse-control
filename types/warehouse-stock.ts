@@ -6,3 +6,10 @@ export type WarehouseStock = {
   sku: string | null;
   stock: number;
 };
+
+export type WarehouseStockFilters = {
+  warehouseId?: string;
+  search?: string;
+  onlyPositive?: boolean;
+  limit?: number;
+};

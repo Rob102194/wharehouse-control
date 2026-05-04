@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient } from "@/supabase/admin";
 import type { Warehouse } from "@/types/warehouse";
-import type { WarehouseStock } from "@/types/warehouse-stock";
+import type { WarehouseStock, WarehouseStockFilters } from "@/types/warehouse-stock";
 
 type WarehouseStockRow = {
   warehouse_id: string;
@@ -15,13 +15,29 @@ type ProductVariantLookup = {
 };
 
 export async function listWarehouseStock(): Promise<WarehouseStock[]> {
+  return listWarehouseStockWithFilters({ onlyPositive: true, limit: 500 });
+}
+
+export async function listWarehouseStockWithFilters(filters: WarehouseStockFilters): Promise<WarehouseStock[]> {
   const adminClient = createSupabaseAdminClient();
-  const { data: stockRows, error: stockError } = await adminClient
+  const limit = filters.limit ?? 500;
+  let query = adminClient
     .from("warehouse_stock")
     .select("warehouse_id, product_variant_id, stock")
+    .order("stock", { ascending: false })
     .order("warehouse_id", { ascending: true })
     .order("product_variant_id", { ascending: true })
-    .returns<WarehouseStockRow[]>();
+    .limit(limit);
+
+  if (filters.warehouseId) {
+    query = query.eq("warehouse_id", filters.warehouseId);
+  }
+
+  if (filters.onlyPositive ?? true) {
+    query = query.gt("stock", 0);
+  }
+
+  const { data: stockRows, error: stockError } = await query.returns<WarehouseStockRow[]>();
 
   if (stockError || !stockRows || stockRows.length === 0) {
     return [];
@@ -42,7 +58,9 @@ export async function listWarehouseStock(): Promise<WarehouseStock[]> {
   const warehouseMap = new Map((warehouses ?? []).map((warehouse) => [warehouse.id, warehouse]));
   const variantMap = new Map((variants ?? []).map((variant) => [variant.id, variant]));
 
-  return stockRows.map((row) => ({
+  const normalizedSearch = filters.search?.trim().toLowerCase();
+
+  const rows = stockRows.map((row) => ({
     warehouse_id: row.warehouse_id,
     warehouse_name: warehouseMap.get(row.warehouse_id)?.name ?? "Almacen desconocido",
     product_variant_id: row.product_variant_id,
@@ -50,4 +68,13 @@ export async function listWarehouseStock(): Promise<WarehouseStock[]> {
     sku: variantMap.get(row.product_variant_id)?.sku ?? null,
     stock: row.stock,
   }));
+
+  if (!normalizedSearch) {
+    return rows;
+  }
+
+  return rows.filter((row) => {
+    const haystack = `${row.product_variant_name} ${row.sku ?? ""} ${row.product_variant_id}`.toLowerCase();
+    return haystack.includes(normalizedSearch);
+  });
 }

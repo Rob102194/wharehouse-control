@@ -1,14 +1,45 @@
 import { requireRole } from "@/server/profile";
-import { listWarehouseStock } from "@/server/stock";
+import { listWarehouseStockWithFilters } from "@/server/stock";
+import { listWarehouses } from "@/server/warehouses";
+import { StockFilters } from "./stock-filters";
 
-export default async function StockPage() {
+type StockPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function asValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() || undefined;
+  }
+
+  return value?.trim() || undefined;
+}
+
+export default async function StockPage({ searchParams }: StockPageProps) {
   await requireRole(["admin", "operator", "owner"]);
-  const stockRows = await listWarehouseStock();
+  const params = (await searchParams) ?? {};
+
+  const onlyPositiveParam = asValue(params.onlyPositive);
+  const onlyPositive = onlyPositiveParam === undefined ? true : onlyPositiveParam === "1";
+
+  const filters = {
+    warehouseId: asValue(params.warehouseId),
+    search: asValue(params.search),
+    onlyPositive,
+    limit: 500,
+  };
+
+  const [stockRows, warehouses] = await Promise.all([
+    listWarehouseStockWithFilters(filters),
+    listWarehouses(),
+  ]);
 
   return (
     <section className="space-y-4">
       <h2 className="text-2xl font-semibold text-slate-900">Stock actual</h2>
       <p className="text-slate-600">Vista derivada desde la view `warehouse_stock`.</p>
+
+      <StockFilters warehouses={warehouses} values={filters} />
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full border-collapse">
@@ -24,7 +55,7 @@ export default async function StockPage() {
             {stockRows.length === 0 ? (
               <tr className="border-t border-slate-200">
                 <td colSpan={4} className="px-3 py-6 text-center text-sm text-slate-500">
-                  Sin datos de stock todavia.
+                  No hay filas de stock para los filtros seleccionados.
                 </td>
               </tr>
             ) : (

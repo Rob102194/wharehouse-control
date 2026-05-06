@@ -29,6 +29,8 @@ type LineItemDraft = {
   dispatchedQuantity?: number;
 };
 
+type LineValidationError = NonNullable<OperationActionState["lineErrors"]>[number];
+
 const initialState: OperationActionState = {
   ok: false,
   message: "",
@@ -54,6 +56,14 @@ function ActionFeedback({ state }: { state: OperationActionState }) {
   }
 
   return <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>;
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return <p className="text-xs text-red-600">{message}</p>;
 }
 
 function parseQuantity(value: string) {
@@ -145,10 +155,12 @@ function LineItemsBuilder({
   variants,
   quantityLabel,
   quantityMin,
+  lineErrors,
 }: {
   variants: ProductVariant[];
   quantityLabel: string;
   quantityMin: number;
+  lineErrors?: LineValidationError[];
 }) {
   const [items, setItems] = useState<LineItemDraft[]>([{ id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
   const variantOptions = useMemo(
@@ -175,7 +187,11 @@ function LineItemsBuilder({
 
   return (
     <div className="space-y-3">
-      {items.map((item, index) => (
+      {items.map((item, index) => {
+        const variantError = lineErrors?.find((error) => error.rowIndex === index && error.field === "productVariantId")?.message;
+        const quantityError = lineErrors?.find((error) => error.rowIndex === index && error.field === "quantity")?.message;
+
+        return (
         <div key={item.id} className="grid gap-2 rounded-lg border border-slate-200 p-3 md:grid-cols-[1fr_150px_auto] md:items-end">
           <label className="space-y-1 text-sm">
             <span className="font-medium text-slate-700">Variante #{index + 1}</span>
@@ -195,7 +211,11 @@ function LineItemsBuilder({
                   updateRow(item.id, "query", variantLabelById.get(selectedId) ?? "");
                 }
               }}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className={`w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2 ${
+                variantError
+                  ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                  : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+              }`}
             >
               <option value="">Selecciona variante</option>
               {variantOptions
@@ -206,6 +226,7 @@ function LineItemsBuilder({
                 </option>
                 ))}
             </select>
+            <FieldError message={variantError} />
           </label>
 
           <label className="space-y-1 text-sm">
@@ -216,8 +237,13 @@ function LineItemsBuilder({
               step="0.001"
               value={item.quantity}
               onChange={(event) => updateRow(item.id, "quantity", event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className={`w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2 ${
+                quantityError
+                  ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                  : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+              }`}
             />
+            <FieldError message={quantityError} />
           </label>
 
           <button
@@ -228,7 +254,7 @@ function LineItemsBuilder({
             Quitar
           </button>
         </div>
-      ))}
+      );})}
 
       <button
         type="button"
@@ -247,10 +273,12 @@ function ReceiptItemsBuilder({
   variants,
   items,
   setItems,
+  lineErrors,
 }: {
   variants: ProductVariant[];
   items: LineItemDraft[];
   setItems: Dispatch<SetStateAction<LineItemDraft[]>>;
+  lineErrors?: LineValidationError[];
 }) {
   const variantOptions = useMemo(
     () =>
@@ -276,7 +304,11 @@ function ReceiptItemsBuilder({
 
   return (
     <div className="space-y-3">
-      {items.map((item, index) => (
+      {items.map((item, index) => {
+        const variantError = lineErrors?.find((error) => error.rowIndex === index && error.field === "productVariantId")?.message;
+        const quantityError = lineErrors?.find((error) => error.rowIndex === index && error.field === "quantity")?.message;
+
+        return (
         <div key={item.id} className="grid gap-2 rounded-lg border border-slate-200 p-3 md:grid-cols-[1fr_180px_auto] md:items-end">
           <label className="space-y-1 text-sm">
             <span className="font-medium text-slate-700">Variante recibida #{index + 1}</span>
@@ -296,7 +328,11 @@ function ReceiptItemsBuilder({
                   updateRow(item.id, "query", variantLabelById.get(selectedId) ?? "");
                 }
               }}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className={`w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2 ${
+                variantError
+                  ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                  : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+              }`}
             >
               <option value="">Selecciona variante</option>
               {variantOptions
@@ -307,6 +343,7 @@ function ReceiptItemsBuilder({
                 </option>
                 ))}
             </select>
+            <FieldError message={variantError} />
           </label>
 
           <label className="space-y-1 text-sm">
@@ -317,11 +354,16 @@ function ReceiptItemsBuilder({
               step="0.001"
               value={item.quantity}
               onChange={(event) => updateRow(item.id, "quantity", event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className={`w-full rounded-lg px-3 py-2 text-sm outline-none transition focus:ring-2 ${
+                quantityError
+                  ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                  : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+              }`}
             />
             <span className="text-xs text-slate-500">
               Despachado: {item.dispatchedQuantity?.toFixed(3) ?? "-"}
             </span>
+            <FieldError message={quantityError} />
           </label>
 
           <button
@@ -332,7 +374,7 @@ function ReceiptItemsBuilder({
             Quitar
           </button>
         </div>
-      ))}
+      );})}
 
       <button
         type="button"
@@ -359,7 +401,11 @@ function EntryForm({ warehouses, variants }: { warehouses: Warehouse[]; variants
           name="destination_warehouse_id"
           required
           defaultValue=""
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+            state.fieldErrors?.destination_warehouse_id
+              ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+              : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+          }`}
         >
           <option value="" disabled>
             Selecciona almacen
@@ -370,8 +416,9 @@ function EntryForm({ warehouses, variants }: { warehouses: Warehouse[]; variants
             </option>
           ))}
         </select>
+        <FieldError message={state.fieldErrors?.destination_warehouse_id} />
       </label>
-      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} />
+      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} lineErrors={state.lineErrors} />
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota (opcional)</span>
         <input
@@ -397,7 +444,11 @@ function ExitForm({ warehouses, variants }: { warehouses: Warehouse[]; variants:
           name="origin_warehouse_id"
           required
           defaultValue=""
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+            state.fieldErrors?.origin_warehouse_id
+              ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+              : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+          }`}
         >
           <option value="" disabled>
             Selecciona almacen
@@ -408,8 +459,9 @@ function ExitForm({ warehouses, variants }: { warehouses: Warehouse[]; variants:
             </option>
           ))}
         </select>
+        <FieldError message={state.fieldErrors?.origin_warehouse_id} />
       </label>
-      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} />
+      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} lineErrors={state.lineErrors} />
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota (opcional)</span>
         <input
@@ -436,7 +488,11 @@ function TransferForm({ warehouses, variants }: { warehouses: Warehouse[]; varia
             name="origin_warehouse_id"
             required
             defaultValue=""
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+              state.fieldErrors?.origin_warehouse_id
+                ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+            }`}
           >
             <option value="" disabled>
               Selecciona almacen
@@ -447,6 +503,7 @@ function TransferForm({ warehouses, variants }: { warehouses: Warehouse[]; varia
               </option>
             ))}
           </select>
+          <FieldError message={state.fieldErrors?.origin_warehouse_id} />
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-medium text-slate-700">Almacen destino</span>
@@ -454,7 +511,11 @@ function TransferForm({ warehouses, variants }: { warehouses: Warehouse[]; varia
             name="destination_warehouse_id"
             required
             defaultValue=""
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+              state.fieldErrors?.destination_warehouse_id
+                ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+            }`}
           >
             <option value="" disabled>
               Selecciona almacen
@@ -465,9 +526,10 @@ function TransferForm({ warehouses, variants }: { warehouses: Warehouse[]; varia
               </option>
             ))}
           </select>
+          <FieldError message={state.fieldErrors?.destination_warehouse_id} />
         </label>
       </div>
-      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} />
+      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} lineErrors={state.lineErrors} />
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota (opcional)</span>
         <input
@@ -491,7 +553,7 @@ function ReceiveTransferForm({
   const [state, formAction] = useActionState(receiveTransferAction, initialState);
   const [selectedTransferId, setSelectedTransferId] = useState("");
   const [items, setItems] = useState<LineItemDraft[]>([{ id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
-  const [clientError, setClientError] = useState("");
+  const [clientErrorState, setClientErrorState] = useState<OperationActionState | null>(null);
 
   const selectedTransfer = useMemo(
     () => inTransitTransfers.find((transfer) => transfer.id === selectedTransferId) ?? null,
@@ -517,38 +579,72 @@ function ReceiveTransferForm({
 
   const receiptValidation = useMemo(() => {
     if (!selectedTransfer) {
-      return { valid: false, message: "Selecciona una transferencia en transito." };
+      return {
+        valid: false,
+        state: {
+          ok: false,
+          message: "Selecciona una transferencia en transito.",
+          fieldErrors: { movement_id: "Selecciona una transferencia en transito." },
+        } satisfies OperationActionState,
+      };
     }
 
     if (items.length === 0) {
-      return { valid: false, message: "Debes incluir al menos una linea de recepcion." };
+      return {
+        valid: false,
+        state: {
+          ok: false,
+          message: "Debes incluir al menos una linea de recepcion.",
+        } satisfies OperationActionState,
+      };
     }
 
-    const invalidLine = items.find((item) => {
+    const lineErrors: LineValidationError[] = [];
+
+    items.forEach((item, rowIndex) => {
       if (!item.productVariantId) {
-        return true;
+        lineErrors.push({
+          rowIndex,
+          field: "productVariantId",
+          message: "Selecciona una variante en esta linea.",
+        });
       }
 
       const receivedQty = parseQuantity(item.quantity);
       if (receivedQty === null || receivedQty < 0) {
-        return true;
+        lineErrors.push({
+          rowIndex,
+          productVariantId: item.productVariantId || undefined,
+          field: "quantity",
+          message: receivedQty === null ? "Ingresa una cantidad valida." : "La cantidad recibida no puede ser negativa.",
+        });
       }
 
-      if (item.dispatchedQuantity !== undefined && receivedQty > item.dispatchedQuantity) {
-        return true;
+      if (item.dispatchedQuantity !== undefined && receivedQty !== null && receivedQty > item.dispatchedQuantity) {
+        lineErrors.push({
+          rowIndex,
+          productVariantId: item.productVariantId || undefined,
+          field: "quantity",
+          message: "La cantidad recibida no puede superar la despachada.",
+        });
       }
-
-      return false;
     });
 
-    if (invalidLine) {
+    if (lineErrors.length > 0) {
       return {
         valid: false,
-        message: "Revisa las lineas: variante obligatoria, cantidad >= 0 y no mayor a la despachada.",
+        state: {
+          ok: false,
+          message: "Revisa las lineas de recepcion marcadas.",
+          lineErrors,
+        } satisfies OperationActionState,
       };
     }
 
-    return { valid: true, message: "" };
+    return {
+      valid: true,
+      state: { ok: true, message: "" } satisfies OperationActionState,
+    };
   }, [items, selectedTransfer]);
 
   const totals = useMemo(() => {
@@ -567,11 +663,11 @@ function ReceiveTransferForm({
       onSubmit={(event) => {
         if (!receiptValidation.valid) {
           event.preventDefault();
-          setClientError(receiptValidation.message);
+          setClientErrorState(receiptValidation.state);
           return;
         }
 
-        setClientError("");
+        setClientErrorState(null);
       }}
       className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
     >
@@ -583,7 +679,11 @@ function ReceiveTransferForm({
           required
           value={selectedTransferId}
           onChange={(event) => setSelectedTransferId(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className={`w-full rounded-lg px-3 py-2 font-mono text-xs outline-none transition focus:ring-2 ${
+            clientErrorState?.fieldErrors?.movement_id || state.fieldErrors?.movement_id
+              ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+              : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+          }`}
         >
           <option value="" disabled>
             Selecciona transferencia
@@ -594,6 +694,7 @@ function ReceiveTransferForm({
             </option>
           ))}
         </select>
+        <FieldError message={clientErrorState?.fieldErrors?.movement_id ?? state.fieldErrors?.movement_id} />
       </label>
       {selectedTransfer ? (
         <div className="space-y-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
@@ -608,7 +709,12 @@ function ReceiveTransferForm({
           {totals.difference > 0 ? <p className="text-amber-700">Diferencia pendiente: {totals.difference.toFixed(3)}</p> : null}
         </div>
       ) : null}
-      <ReceiptItemsBuilder variants={variants} items={items} setItems={setItems} />
+      <ReceiptItemsBuilder
+        variants={variants}
+        items={items}
+        setItems={setItems}
+        lineErrors={clientErrorState?.lineErrors ?? state.lineErrors}
+      />
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota de incidente (opcional)</span>
         <input
@@ -617,7 +723,9 @@ function ReceiveTransferForm({
         />
       </label>
       <ActionFeedback state={state} />
-      {clientError ? <p className="text-sm text-red-600">{clientError}</p> : null}
+      {clientErrorState?.message && !clientErrorState.fieldErrors && !clientErrorState.lineErrors ? (
+        <p className="text-sm text-red-600">{clientErrorState.message}</p>
+      ) : null}
       <SubmitButton label="Confirmar recepcion" pendingLabel="Confirmando recepcion..." />
     </form>
   );
@@ -636,7 +744,11 @@ function AdjustmentForm({ warehouses, variants }: { warehouses: Warehouse[]; var
             name="warehouse_id"
             required
             defaultValue=""
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+              state.fieldErrors?.warehouse_id
+                ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+            }`}
           >
             <option value="" disabled>
               Selecciona almacen
@@ -647,6 +759,7 @@ function AdjustmentForm({ warehouses, variants }: { warehouses: Warehouse[]; var
               </option>
             ))}
           </select>
+          <FieldError message={state.fieldErrors?.warehouse_id} />
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-medium text-slate-700">Direccion</span>
@@ -654,11 +767,16 @@ function AdjustmentForm({ warehouses, variants }: { warehouses: Warehouse[]; var
             name="adjustment_direction"
             required
             defaultValue="positive"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+              state.fieldErrors?.adjustment_direction
+                ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+                : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+            }`}
           >
             <option value="positive">Ajuste positivo</option>
             <option value="negative">Ajuste negativo</option>
           </select>
+          <FieldError message={state.fieldErrors?.adjustment_direction} />
         </label>
       </div>
       <label className="block space-y-1 text-sm">
@@ -666,10 +784,15 @@ function AdjustmentForm({ warehouses, variants }: { warehouses: Warehouse[]; var
         <input
           name="adjustment_reason"
           required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className={`w-full rounded-lg px-3 py-2 outline-none transition focus:ring-2 ${
+            state.fieldErrors?.adjustment_reason
+              ? "border border-red-300 focus:border-red-500 focus:ring-red-100"
+              : "border border-slate-300 focus:border-brand-500 focus:ring-brand-100"
+          }`}
         />
+        <FieldError message={state.fieldErrors?.adjustment_reason} />
       </label>
-      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} />
+      <LineItemsBuilder variants={variants} quantityLabel="Cantidad" quantityMin={0.001} lineErrors={state.lineErrors} />
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota (opcional)</span>
         <input

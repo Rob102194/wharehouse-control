@@ -14,13 +14,14 @@ export type LoginActionState = {
 
 async function createActionSupabaseClient() {
   const cookieStore = await cookies();
+  type CookieOptions = Parameters<typeof cookieStore.set>[2];
 
   return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
         cookiesToSet.forEach(({ name, value, options }) => {
           cookieStore.set(name, value, options);
         });

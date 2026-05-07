@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { useFormStatus } from "react-dom";
 import {
   createAdjustmentAction,
   createEntryAction,
@@ -10,6 +9,11 @@ import {
   receiveTransferAction,
   type OperationActionState,
 } from "@/app/(dashboard)/operations/actions";
+import {
+  FieldError,
+  OperationActionFeedback,
+  OperationSubmitButton,
+} from "@/app/(dashboard)/operations/components/operation-form-feedback";
 import type { TransferInTransitWithItems } from "@/types/movement";
 import type { ProductVariant } from "@/types/product-variant";
 import type { Warehouse } from "@/types/warehouse";
@@ -35,36 +39,6 @@ const initialState: OperationActionState = {
   ok: false,
   message: "",
 };
-
-function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-70"
-    >
-      {pending ? pendingLabel : label}
-    </button>
-  );
-}
-
-function ActionFeedback({ state }: { state: OperationActionState }) {
-  if (!state.message) {
-    return null;
-  }
-
-  return <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>;
-}
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) {
-    return null;
-  }
-
-  return <p className="text-xs text-red-600">{message}</p>;
-}
 
 function parseQuantity(value: string) {
   const quantity = Number(value);
@@ -426,8 +400,8 @@ function EntryForm({ warehouses, variants }: { warehouses: Warehouse[]; variants
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </label>
-      <ActionFeedback state={state} />
-      <SubmitButton label="Crear entrada" pendingLabel="Creando entrada..." />
+      <OperationActionFeedback state={state} />
+      <OperationSubmitButton label="Crear entrada" pendingLabel="Creando entrada..." />
     </form>
   );
 }
@@ -469,8 +443,8 @@ function ExitForm({ warehouses, variants }: { warehouses: Warehouse[]; variants:
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </label>
-      <ActionFeedback state={state} />
-      <SubmitButton label="Crear salida" pendingLabel="Creando salida..." />
+      <OperationActionFeedback state={state} />
+      <OperationSubmitButton label="Crear salida" pendingLabel="Creando salida..." />
     </form>
   );
 }
@@ -537,8 +511,8 @@ function TransferForm({ warehouses, variants }: { warehouses: Warehouse[]; varia
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </label>
-      <ActionFeedback state={state} />
-      <SubmitButton label="Crear transferencia" pendingLabel="Creando transferencia..." />
+      <OperationActionFeedback state={state} />
+      <OperationSubmitButton label="Crear transferencia" pendingLabel="Creando transferencia..." />
     </form>
   );
 }
@@ -722,11 +696,11 @@ function ReceiveTransferForm({
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </label>
-      <ActionFeedback state={state} />
+      <OperationActionFeedback state={state} />
       {clientErrorState?.message && !clientErrorState.fieldErrors && !clientErrorState.lineErrors ? (
         <p className="text-sm text-red-600">{clientErrorState.message}</p>
       ) : null}
-      <SubmitButton label="Confirmar recepcion" pendingLabel="Confirmando recepcion..." />
+      <OperationSubmitButton label="Confirmar recepcion" pendingLabel="Confirmando recepcion..." />
     </form>
   );
 }
@@ -800,8 +774,8 @@ function AdjustmentForm({ warehouses, variants }: { warehouses: Warehouse[]; var
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </label>
-      <ActionFeedback state={state} />
-      <SubmitButton label="Crear ajuste" pendingLabel="Creando ajuste..." />
+      <OperationActionFeedback state={state} />
+      <OperationSubmitButton label="Crear ajuste" pendingLabel="Creando ajuste..." />
     </form>
   );
 }

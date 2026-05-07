@@ -1,14 +1,33 @@
 "use server";
 
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/env";
 import { getHomePathForRole } from "@/server/profile";
 import { createSupabaseAdminClient } from "@/supabase/admin";
-import { createSupabaseServerActionClient } from "@/supabase/server-action";
 import type { Role } from "@/types/domain";
 
 export type LoginActionState = {
   error: string | null;
 };
+
+async function createActionSupabaseClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options);
+        });
+      },
+    },
+  });
+}
 
 export async function loginAction(_prevState: LoginActionState, formData: FormData): Promise<LoginActionState> {
   const username = String(formData.get("username") ?? "").trim();
@@ -29,7 +48,7 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
     return { error: "Credenciales invalidas" };
   }
 
-  const supabase = await createSupabaseServerActionClient();
+  const supabase = await createActionSupabaseClient();
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: profile.email,

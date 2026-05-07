@@ -45,3 +45,7 @@ Copiar `.env.example` a `.env.local` y completar valores reales.
 - `npm run dev`
 - `npm run build`
 - `npm run lint`
+
+## Operacion y release
+
+- Checklist de cierre MVP: `docs/etapa-8-cierre-mvp.md`

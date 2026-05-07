@@ -1,9 +1,29 @@
 "use server";
 
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { signOut } from "@/server/auth";
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/env";
+
+async function createActionSupabaseClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options);
+        });
+      },
+    },
+  });
+}
 
 export async function signOutAction() {
-  await signOut();
+  const supabase = await createActionSupabaseClient();
+  await supabase.auth.signOut();
   redirect("/login");
 }

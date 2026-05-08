@@ -11,56 +11,56 @@ type OperationsHubProps = {
 };
 
 type OperationCard = {
+  id: string;
   title: string;
   description: string;
-  hrefMode: string;
-  hrefPath?: string;
+  hrefPath: string;
 };
 
 const MAIN_FLOW_CARDS: OperationCard[] = [
   {
+    id: "receive-purchase",
     title: "Recibir compra",
     description: "Entrada de mercaderia comprada al almacen activo.",
-    hrefMode: "receive-purchase",
     hrefPath: "/operations/receive-purchase",
   },
   {
+    id: "dispatch-restaurant",
     title: "Despachar al restaurante",
     description: "Salida de inventario hacia cocina o area de consumo.",
-    hrefMode: "dispatch-restaurant",
     hrefPath: "/operations/dispatch-restaurant",
   },
   {
+    id: "transfer-out",
     title: "Transferir a otro almacen",
     description: "Despacho entre almacenes con recepcion pendiente.",
-    hrefMode: "transfer-out",
     hrefPath: "/operations/transfer-out",
   },
   {
+    id: "transfer-receive",
     title: "Recibir transferencia",
     description: "Confirmacion de recepcion para transferencias en transito.",
-    hrefMode: "transfer-receive",
     hrefPath: "/operations/transfer-receive",
   },
 ];
 
 const SECONDARY_FLOW_CARDS: OperationCard[] = [
   {
+    id: "return-from-restaurant",
     title: "Recibir devolucion restaurante",
     description: "Registrar devoluciones de producto al almacen activo.",
-    hrefMode: "return-from-restaurant",
     hrefPath: "/operations/return-from-restaurant",
   },
   {
+    id: "dispatch-production",
     title: "Despachar a elaboracion",
     description: "Salida de insumos para procesos de elaboracion.",
-    hrefMode: "dispatch-production",
     hrefPath: "/operations/dispatch-production",
   },
   {
+    id: "receive-from-production",
     title: "Recibir desde elaboracion",
     description: "Entrada de producto elaborado de vuelta a almacen.",
-    hrefMode: "receive-from-production",
     hrefPath: "/operations/receive-from-production",
   },
 ];
@@ -88,13 +88,7 @@ export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHub
 
     const params = new URLSearchParams();
     params.set("warehouseId", activeWarehouse.id);
-
-    if (card.hrefPath) {
-      return `${card.hrefPath}?${params.toString()}`;
-    }
-
-    params.set("mode", card.hrefMode);
-    return `/operations/legacy?${params.toString()}`;
+    return `${card.hrefPath}?${params.toString()}`;
   };
 
   return (
@@ -151,7 +145,7 @@ export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHub
         <div className="grid gap-3 md:grid-cols-2">
           {MAIN_FLOW_CARDS.map((card) => (
             <Link
-              key={card.hrefMode}
+              key={card.id}
               href={buildFlowHref(card)}
               aria-disabled={!activeWarehouse}
               className={`rounded-xl border p-4 transition ${
@@ -172,7 +166,7 @@ export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHub
         <div className="grid gap-3 md:grid-cols-2">
           {SECONDARY_FLOW_CARDS.map((card) => (
             <Link
-              key={card.hrefMode}
+              key={card.id}
               href={buildFlowHref(card)}
               aria-disabled={!activeWarehouse}
               className={`rounded-xl border p-4 transition ${
@@ -189,9 +183,9 @@ export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHub
           {canCreateAdjustment ? (
             <Link
               href={buildFlowHref({
+                id: "adjustment",
                 title: "Ajuste administrativo",
                 description: "",
-                hrefMode: "adjustment",
                 hrefPath: "/operations/adjustment",
               })}
               aria-disabled={!activeWarehouse}

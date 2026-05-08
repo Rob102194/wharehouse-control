@@ -192,6 +192,7 @@ export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHub
                 title: "Ajuste administrativo",
                 description: "",
                 hrefMode: "adjustment",
+                hrefPath: "/operations/adjustment",
               })}
               aria-disabled={!activeWarehouse}
               className={`rounded-xl border p-4 transition ${

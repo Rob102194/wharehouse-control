@@ -1,41 +1,46 @@
-import { OperationsConsole } from "@/app/(dashboard)/operations/operations-console";
-import { listTransfersInTransitWithItems } from "@/server/movements";
-import { listActiveProductVariants } from "@/server/product-variants";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/server/profile";
-import { listActiveWarehouses } from "@/server/warehouses";
 
 type LegacyOperationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+const MODE_TO_ROUTE: Record<string, string> = {
+  "receive-purchase": "/operations/receive-purchase",
+  "dispatch-restaurant": "/operations/dispatch-restaurant",
+  "transfer-out": "/operations/transfer-out",
+  "transfer-receive": "/operations/transfer-receive",
+  "return-from-restaurant": "/operations/return-from-restaurant",
+  "dispatch-production": "/operations/dispatch-production",
+  "receive-from-production": "/operations/receive-from-production",
+  adjustment: "/operations/adjustment",
+};
+
 export default async function LegacyOperationsPage({ searchParams }: LegacyOperationsPageProps) {
-  const profile = await requireRole(["admin", "operator"]);
+  await requireRole(["admin", "operator"]);
   const params = await searchParams;
-  const selectedWarehouseId = typeof params.warehouseId === "string" ? params.warehouseId : null;
+  const mode = typeof params.mode === "string" ? params.mode : "";
+  const warehouseId = typeof params.warehouseId === "string" ? params.warehouseId : "";
+  const transferId = typeof params.transferId === "string" ? params.transferId : "";
+  const targetRoute = MODE_TO_ROUTE[mode];
 
-  const [warehouses, variants, inTransitTransfers] = await Promise.all([
-    listActiveWarehouses(),
-    listActiveProductVariants(),
-    listTransfersInTransitWithItems(),
-  ]);
+  if (!targetRoute) {
+    const hubParams = new URLSearchParams();
+    if (warehouseId) {
+      hubParams.set("warehouseId", warehouseId);
+    }
 
-  const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === selectedWarehouseId) ?? null;
+    redirect(hubParams.size > 0 ? `/operations?${hubParams.toString()}` : "/operations");
+  }
 
-  return (
-    <section className="space-y-4">
-      <h2 className="text-2xl font-semibold text-slate-900">Consola operativa (actual)</h2>
-      <p className="text-slate-600">Compatibilidad temporal mientras se migran los flujos dedicados por tarea.</p>
-      {selectedWarehouse ? (
-        <p className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-900">
-          Contexto recibido desde hub: {selectedWarehouse.code} - {selectedWarehouse.name}
-        </p>
-      ) : null}
-      <OperationsConsole
-        warehouses={warehouses}
-        variants={variants}
-        inTransitTransfers={inTransitTransfers}
-        canCreateAdjustment={profile.role === "admin"}
-      />
-    </section>
-  );
+  const targetParams = new URLSearchParams();
+  if (warehouseId) {
+    targetParams.set("warehouseId", warehouseId);
+  }
+
+  if (transferId && mode === "transfer-receive") {
+    targetParams.set("transferId", transferId);
+  }
+
+  redirect(targetParams.size > 0 ? `${targetRoute}?${targetParams.toString()}` : targetRoute);
 }

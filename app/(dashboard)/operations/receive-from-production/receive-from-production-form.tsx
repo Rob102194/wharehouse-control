@@ -8,7 +8,7 @@ import {
 } from "@/app/(dashboard)/operations/components/operation-form-feedback";
 import {
   OperationLineItemsForm,
-  type OperationLineItemDraft,
+  type OperationItemRow,
 } from "@/app/(dashboard)/operations/components/operation-line-items-form";
 import type { ProductVariant } from "@/types/product-variant";
 import type { Warehouse } from "@/types/warehouse";
@@ -25,28 +25,26 @@ const initialState: OperationActionState = {
 
 export function ReceiveFromProductionForm({ warehouse, variants }: ReceiveFromProductionFormProps) {
   const [state, formAction] = useActionState(createEntryAction, initialState);
-  const [items, setItems] = useState<OperationLineItemDraft[]>([
-    { id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" },
-  ]);
+  const [items, setItems] = useState<OperationItemRow[]>([]);
 
   useEffect(() => {
     if (!state.ok) {
       return;
     }
 
-    setItems([{ id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
+    setItems([]);
   }, [state.ok]);
 
-  const addRow = () => {
-    setItems((prev) => [...prev, { id: crypto.randomUUID(), productVariantId: "", quantity: "", query: "" }]);
+  const addItem = (variant: ProductVariant) => {
+    setItems((prev) => [...prev, { id: crypto.randomUUID(), productVariantId: variant.id, quantity: "1" }]);
   };
 
-  const removeRow = (id: string) => {
-    setItems((prev) => (prev.length > 1 ? prev.filter((item) => item.id !== id) : prev));
+  const removeItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const updateRow = (id: string, field: "productVariantId" | "quantity" | "query", value: string) => {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  const updateQuantity = (id: string, quantity: string) => {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, quantity } : item)));
   };
 
   return (
@@ -59,14 +57,13 @@ export function ReceiveFromProductionForm({ warehouse, variants }: ReceiveFromPr
 
       <OperationLineItemsForm
         title="Lineas recibidas"
-        quantityLabel="Cantidad recibida"
-        addButtonLabel="Agregar linea"
         variants={variants}
         items={items}
-        onAddRow={addRow}
-        onRemoveRow={removeRow}
-        onUpdateRow={updateRow}
+        onAddItem={addItem}
+        onRemoveItem={removeItem}
+        onUpdateQuantity={updateQuantity}
         lineErrors={state.lineErrors}
+        emptyMessage="Busca y selecciona productos recibidos de produccion."
       />
 
       <label className="block space-y-1 text-sm">

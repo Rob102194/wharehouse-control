@@ -8,58 +8,58 @@ Objetivo: mejorar la UX operativa de `operations` reemplazando el patron actual 
 - [x] No implementar nota por linea en esta iteracion.
 - [x] Bloquear duplicados de variante en cliente.
 - [x] Mantener validacion server-side actual.
-- [ ] Definir mensaje UX exacto para duplicado bloqueado.
-- [ ] Definir si al duplicado bloqueado se enfoca la fila existente.
+- [x] Definir mensaje UX exacto para duplicado bloqueado: "Esta variante ya fue agregada a la operacion." (toast 2.5s).
+- [x] Al duplicado bloqueado se enfoca el picker (input se mantiene activo para seguir buscando).
 
 ## 2) Objetivo UX
 
-- [ ] Reemplazar `agregar linea vacia + buscar dentro de la linea` por:
-  - [ ] buscador unico de producto/SKU
-  - [ ] sugerencias dinamicas mientras escribe
-  - [ ] seleccion que agrega fila a tabla editable
-- [ ] Mantener revision clara antes de confirmar.
-- [ ] Mantener compatibilidad mobile/tablet.
-- [ ] Mantener rapidez operativa tipo POS.
+- [x] Reemplazar `agregar linea vacia + buscar dentro de la linea` por:
+  - [x] buscador unico de producto/SKU
+  - [x] sugerencias dinamicas mientras escribe
+  - [x] seleccion que agrega fila a tabla editable
+- [x] Mantener revision clara antes de confirmar.
+- [x] Mantener compatibilidad mobile/tablet.
+- [x] Mantener rapidez operativa tipo POS.
 
 ## 3) Componentes nuevos / refactor
 
 ### 3.1 Selector
-- [ ] Crear `OperationProductPicker`.
-- [ ] Mostrar sugerencias por nombre de producto, variante y SKU.
-- [ ] Soportar teclado:
-  - [ ] flecha arriba
-  - [ ] flecha abajo
-  - [ ] enter
-  - [ ] escape
-- [ ] Limpiar input tras seleccion exitosa.
-- [ ] Bloquear duplicados.
+- [x] Crear `OperationProductPicker`.
+- [x] Mostrar sugerencias por nombre de producto, variante y SKU.
+- [x] Soportar teclado:
+  - [x] flecha arriba
+  - [x] flecha abajo
+  - [x] enter
+  - [x] escape
+- [x] Limpiar input tras seleccion exitosa.
+- [x] Bloquear duplicados.
 
 ### 3.2 Tabla editable
-- [ ] Crear `OperationItemsTable`.
-- [ ] Mostrar columnas:
-  - [ ] producto / variante
-  - [ ] SKU
-  - [ ] cantidad
-  - [ ] quitar
-- [ ] Mantener errores por linea.
-- [ ] Mantener edicion rapida de cantidades.
-- [ ] Mantener eliminacion de filas.
+- [x] Crear `OperationItemsTable`.
+- [x] Mostrar columnas:
+  - [x] producto / variante
+  - [x] SKU
+  - [x] cantidad
+  - [x] quitar
+- [x] Mantener errores por linea.
+- [x] Mantener edicion rapida de cantidades.
+- [x] Mantener eliminacion de filas.
 
 ### 3.3 Contenedor compartido
-- [ ] Refactorizar `OperationLineItemsForm`.
-- [ ] Mantener serializacion a `items_json`.
-- [ ] Mantener compatibilidad con `lineErrors`.
-- [ ] Mantener reset tras exito.
+- [x] Refactorizar `OperationLineItemsForm`.
+- [x] Mantener serializacion a `items_json`.
+- [x] Mantener compatibilidad con `lineErrors`.
+- [x] Mantener reset tras exito.
 
 ## 4) Flujos a migrar
 
-- [ ] `receive-purchase`
-- [ ] `dispatch-restaurant`
-- [ ] `transfer-out`
-- [ ] `return-from-restaurant`
-- [ ] `dispatch-production`
-- [ ] `receive-from-production`
-- [ ] `adjustment`
+- [x] `receive-purchase`
+- [x] `dispatch-restaurant`
+- [x] `transfer-out`
+- [x] `return-from-restaurant`
+- [x] `dispatch-production`
+- [x] `receive-from-production`
+- [x] `adjustment`
 
 ## 5) Flujos fuera de alcance en esta iteracion
 
@@ -68,14 +68,14 @@ Objetivo: mejorar la UX operativa de `operations` reemplazando el patron actual 
 
 ## 6) Reglas a no romper
 
-- [ ] `items_json` mantiene forma actual:
-  - [ ] `product_variant_id`
-  - [ ] `quantity`
-- [ ] No introducir cambios en RPCs por este rediseno.
-- [ ] No introducir cambios de schema por este rediseno.
-- [ ] No permitir duplicados de variante en la tabla.
-- [ ] Mantener cantidades > 0 donde aplique.
-- [ ] Mantener reglas server-side de stock y movimientos.
+- [x] `items_json` mantiene forma actual:
+  - [x] `product_variant_id`
+  - [x] `quantity`
+- [x] No introducir cambios en RPCs por este rediseno.
+- [x] No introducir cambios de schema por este rediseno.
+- [x] No permitir duplicados de variante en la tabla.
+- [x] Mantener cantidades > 0 donde aplique.
+- [x] Mantener reglas server-side de stock y movimientos.
 
 ## 7) QA UX
 
@@ -103,13 +103,13 @@ Objetivo: mejorar la UX operativa de `operations` reemplazando el patron actual 
 
 ## 9) Limpieza tecnica
 
-- [ ] Eliminar logica vieja de lineas vacias si ya no se usa.
-- [ ] Revisar imports/helpers sobrantes.
-- [ ] Mantener `lint` en verde.
-- [ ] Mantener `build` en verde.
+- [x] Eliminar logica vieja de lineas vacias si ya no se usa.
+- [x] Revisar imports/helpers sobrantes.
+- [x] Mantener `lint` en verde.
+- [x] Mantener `build` en verde.
 
 ## 10) Cierre
 
 - [ ] UX operativa aprobada.
 - [ ] Sin regresiones funcionales.
-- [ ] Documentacion actualizada.
+- [x] Documentacion actualizada.

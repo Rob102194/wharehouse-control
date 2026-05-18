@@ -8,11 +8,14 @@ type ProductVariantRow = {
   sku: string | null;
   presentation: string | null;
   unit_name: string | null;
+  secondary_unit: string | null;
+  secondary_quantity: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;
   products: {
     name: string;
+    is_measurable: boolean;
   } | null;
 };
 
@@ -20,7 +23,7 @@ export async function listProductVariants(): Promise<ProductVariant[]> {
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
     .from("product_variants")
-    .select("id, product_id, name, sku, presentation, unit_name, active, created_at, updated_at, products(name)")
+    .select("id, product_id, name, sku, presentation, unit_name, secondary_unit, secondary_quantity, active, created_at, updated_at, products(name, is_measurable)")
     .order("created_at", { ascending: false })
     .returns<ProductVariantRow[]>();
 
@@ -36,6 +39,9 @@ export async function listProductVariants(): Promise<ProductVariant[]> {
     sku: variant.sku,
     presentation: variant.presentation,
     unit_name: variant.unit_name,
+    secondary_unit: variant.secondary_unit,
+    secondary_quantity: variant.secondary_quantity,
+    product_is_measurable: variant.products?.is_measurable ?? true,
     active: variant.active,
     created_at: variant.created_at,
     updated_at: variant.updated_at,
@@ -46,7 +52,7 @@ export async function listActiveProductVariants(): Promise<ProductVariant[]> {
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
     .from("product_variants")
-    .select("id, product_id, name, sku, presentation, unit_name, active, created_at, updated_at, products(name)")
+    .select("id, product_id, name, sku, presentation, unit_name, secondary_unit, secondary_quantity, active, created_at, updated_at, products(name, is_measurable)")
     .eq("active", true)
     .order("created_at", { ascending: false })
     .returns<ProductVariantRow[]>();
@@ -63,6 +69,9 @@ export async function listActiveProductVariants(): Promise<ProductVariant[]> {
     sku: variant.sku,
     presentation: variant.presentation,
     unit_name: variant.unit_name,
+    secondary_unit: variant.secondary_unit,
+    secondary_quantity: variant.secondary_quantity,
+    product_is_measurable: variant.products?.is_measurable ?? true,
     active: variant.active,
     created_at: variant.created_at,
     updated_at: variant.updated_at,

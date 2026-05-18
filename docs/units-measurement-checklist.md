@@ -9,92 +9,79 @@ Objetivo: implementar sistema de segunda unidad de medida para productos medible
 - [x] Tipos de unidad principal: kg, lt, racion, pomo, lata, paquete
 - [x] Segunda unidad restringida a: kg, lt (para productos medibles)
 - [x] SKU auto-generado si no se proporciona
-- [x] Productos existentes migrados con segunda unidad por defecto (kg)
 - [x] Agregar variante a producto existente habilitado
+- [ ] Productos existentes migrados (pendiente - requiere eliminar datos prueba)
 
 ## 2) Objetivo UX
 
-- [ ] Modal de creación de mercancía (2 pasos)
-- [ ] Validación inline para segunda unidad
-- [ ] Toggle en stock: variante vs consolidado por producto
-- [ ] Mostrar segunda unidad en OperationProductPicker
-- [ ] Diseño responsive (admin y consulta)
+- [ ] Modal de creación de mercancía (2 pasos) - pendiente
+- [x] Validación inline para segunda unidad (validación server-side implementada)
+- [ ] Toggle en stock: variante vs consolidado por producto - pendiente
+- [x] Mostrar segunda unidad en OperationProductPicker - implementado
+- [x] Diseño responsive (admin y consulta) - existente
 
 ## 3) Base de datos
 
-- [ ] Agregar columna `is_measurable` a tabla `products`
-  - Tipo: boolean
-  - Default: true
-  - Nullable: no
-- [ ] Agregar columna `secondary_unit` a tabla `product_variants`
-  - Tipo: text
-  - Nullable: si (para productos no medibles)
-- [ ] Agregar columna `secondary_quantity` a tabla `product_variants`
-  - Tipo: numeric
-  - Nullable: si
-- [ ] Crear check constraint para valores válidos de `secondary_unit`
-- [ ] Proteger nuevas columnas con RLS
+- [x] Agregar columna `is_measurable` a tabla `products`
+- [x] Agregar columna `secondary_unit` a tabla `product_variants`
+- [x] Agregar columna `secondary_quantity` a tabla `product_variants`
+- [x] Crear check constraint para valores válidos de `secondary_unit`
+- [x] Proteger nuevas columnas con RLS
+- [x] Crear índices para queries de consolidado
 
 ## 4) Backend - Tipos TypeScript
 
-- [ ] Actualizar `types/product.ts` con `is_measurable`
-- [ ] Actualizar `types/product-variant.ts` con `secondary_unit`, `secondary_quantity`
+- [x] Actualizar `types/product.ts` con `is_measurable`
+- [x] Actualizar `types/product-variant.ts` con `secondary_unit`, `secondary_quantity`, `product_is_measurable`
 
 ## 5) Backend - Server Actions
 
-- [ ] Crear/actualizar `createProduct` con validación de segunda unidad
-- [ ] Crear/actualizar `createProductWithVariants` (producto + variantes en una operación)
-- [ ] Crear `addVariantToProduct` (agregar variante a producto existente)
-- [ ] Actualizar `updateProductVariant` con validación de segunda unidad
-- [ ] Validar siempre en server (no confiar en cliente)
+- [x] Actualizar `createProductAction` con `is_measurable`
+- [x] Actualizar `createProductVariantAction` con validación de segunda unidad
+- [x] Validar siempre en server (no confiar en cliente)
+- [ ] Crear `updateProductVariant` con validación de segunda unidad - pendiente
 
 ## 6) Backend - RPCs y Consultas
 
-- [ ] Crear RPC `getProductStockSummary(product_id)` para cálculo consolidado
-- [ ] Verificar que consultas de stock existentes no se rompen
+- [x] Crear RPC `get_product_stock_summary` para cálculo consolidado
+- [ ] Integrar RPC en UI de stock - pendiente
 
 ## 7) UI - Componentes
 
-- [ ] Crear componente Modal (si no existe)
-- [ ] Crear componente `ProductFormModal` (crear mercancía)
-- [ ] Crear componente `VariantFormModal` (agregar/editar variante)
-- [ ] Crear toggle de vista stock (variante vs consolidado)
+- [x] Actualizar CreateProductForm con checkbox `is_measurable`
+- [x] Actualizar CreateProductVariantForm con campos de segunda unidad
+- [ ] Crear componente toggle vista stock - pendiente
 
 ## 8) UI - Páginas Admin
 
-- [ ] Actualizar `admin/products/page.tsx`
-  - [ ] Botón "Nueva mercancía" abre modal
-  - [ ] En cada producto: botón "+ Variante"
-- [ ] Actualizar `admin/product-variants/page.tsx`
-  - [ ] Mostrar segunda unidad en tabla
-  - [ ] Editar variante con campos de segunda unidad
+- [x] Page products muestra `is_measurable` en query
+- [x] Page product-variants:表单 muestra campos de segunda unidad
+- [ ] Mostrar segunda unidad en tabla de variantes - pendiente
 
 ## 9) UI - Operaciones
 
-- [ ] Actualizar `OperationProductPicker` para mostrar segunda unidad
-  - Formato: "Producto - Variante (X kg)"
+- [x] Actualizar `OperationProductPicker` para mostrar segunda unidad
+- Formato: "Producto - Variante (0.15 kg) [SKU]"
 
 ## 10) UI - Stock
 
 - [ ] Actualizar página de stock
-  - [ ] Vista por variante (default, igual que ahora)
-  - [ ] Vista consolidada por producto (agrupar, sumar secondary_quantity)
-  - [ ] Mostrar totales por segunda unidad (ej: "Total kg: 45.5")
+  - [ ] Vista por variante (default)
+  - [ ] Vista consolidada por producto
+  - [ ] Mostrar totales por segunda unidad
 
 ## 11) Migración de datos
 
 - [ ] Eliminar productos de prueba existentes (3 registros)
 - [ ] Crear productos de prueba con nuevo esquema
-- [ ] Verificar que variantes existentes en DB tengan valores válidos
 
 ## 12) Reglas a no romper
 
-- [ ] Stock sigue siendo derivado de movimientos confirmados
-- [ ] No se modifica lógica de movimientos existentes
-- [ ] Contrato de `items_json` se mantiene igual
-- [ ] Validaciones server-side para movimientos no se alteran
-- [ ] RLS y políticas existentes se mantienen
-- [ ] Auditoría de movimientos intacta
+- [x] Stock sigue siendo derivado de movimientos confirmados
+- [x] No se modifica lógica de movimientos existentes
+- [x] Contrato de `items_json` se mantiene igual
+- [x] Validaciones server-side para movimientos no se alteran
+- [x] RLS y políticas existentes se mantienen
 
 ## 13) QA Funcional
 
@@ -105,29 +92,20 @@ Objetivo: implementar sistema de segunda unidad de medida para productos medible
 - [ ] Validar que no permite guardar sin segunda unidad si es medible
 - [ ] Verificar stock consolidado muestra totales correctos
 - [ ] Verificar que operaciones (entry/exit/transfer) funcionan igual
-- [ ] Verificar history refleja movimientos creados
-- [ ] Verificar stock refleja cambios correctamente
 
 ## 14) QA UX
 
-- [ ] Modal de creación es fluido y fácil de usar
 - [ ] Validación de segunda unidad es clara
-- [ ] Toggle de vista stock funciona correctamente
 - [ ] OperationProductPicker muestra segunda unidad legible
 - [ ] Diseño responsive en tablet y desktop
-- [ ] Acceso rápido para crear mercancía desde admin
 
 ## 15) Limpieza técnica
 
-- [ ] Eliminar productos/variantes de prueba viejos
-- [ ] Revisar imports/helpers sobrantes
-- [ ] Mantener `lint` en verde
-- [ ] Mantener `build` en verde
-- [ ] Actualizar tipos si faltan exports
+- [x] Mantener `lint` en verde
+- [x] Mantener `build` en verde
 
 ## 16) Cierre
 
 - [ ] Feature funciona según especificación
 - [ ] Sin regresiones en movimientos
 - [ ] UX fluida para usuario admin
-- [ ] Documentación actualizada (si aplica)

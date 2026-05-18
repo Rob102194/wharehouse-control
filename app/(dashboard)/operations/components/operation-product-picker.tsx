@@ -37,7 +37,7 @@ export function OperationProductPicker({ variants, selectedIds, onSelect, onDupl
     return filtered
       .map((v) => ({
         id: v.id,
-        label: `${v.product_name} - ${v.name}${v.sku ? ` (${v.sku})` : ""}`,
+        label: `${v.product_name} - ${v.name}${v.secondary_unit && v.secondary_quantity ? ` (${v.secondary_quantity} ${v.secondary_unit})` : ""}${v.sku ? ` [${v.sku}]` : ""}`,
         variant: v,
       }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));

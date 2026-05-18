@@ -21,6 +21,7 @@ export async function createProductAction(
 
   const name = sanitize(formData.get("name"));
   const description = sanitize(formData.get("description"));
+  const isMeasurable = formData.get("is_measurable") !== "false";
 
   if (!name) {
     return { ok: false, message: "El nombre del producto es obligatorio." };
@@ -30,6 +31,7 @@ export async function createProductAction(
   const { error } = await adminClient.from("products").insert({
     name,
     description: description || null,
+    is_measurable: isMeasurable,
   });
 
   if (error) {

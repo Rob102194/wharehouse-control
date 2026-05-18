@@ -87,12 +87,50 @@ export function CreateProductVariantForm({ products }: CreateProductVariantFormP
       </div>
 
       <label className="block space-y-1 text-sm">
-        <span className="font-medium text-slate-700">Unidad (opcional)</span>
-        <input
+        <span className="font-medium text-slate-700">Unidad principal (opcional)</span>
+        <select
           name="unit_name"
+          defaultValue=""
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-        />
+        >
+          <option value="">Selecciona unidad</option>
+          <option value="kg">kg</option>
+          <option value="lt">lt</option>
+          <option value="racion">racion</option>
+          <option value="pomo">pomo</option>
+          <option value="lata">lata</option>
+          <option value="paquete">paquete</option>
+        </select>
       </label>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="space-y-1 text-sm">
+          <span className="font-medium text-slate-700">Segunda unidad (kg/lt)</span>
+          <select
+            name="secondary_unit"
+            defaultValue=""
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          >
+            <option value="">Selecciona segunda unidad</option>
+            <option value="kg">kg</option>
+            <option value="lt">lt</option>
+          </select>
+        </label>
+
+        <label className="space-y-1 text-sm">
+          <span className="font-medium text-slate-700">Cantidad segunda unidad</span>
+          <input
+            type="number"
+            name="secondary_quantity"
+            step="0.001"
+            min="0.001"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          />
+        </label>
+      </div>
+      <p className="text-xs text-slate-500">
+        La segunda unidad es obligatoria para productos medibles. Ejemplo: &quot;Lata&quot; con 0.15 kg.
+      </p>
 
       {state.message ? (
         <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>

@@ -53,6 +53,19 @@ export function CreateProductForm() {
         />
       </label>
 
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="is_measurable"
+          defaultChecked
+          className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+        />
+        <span className="font-medium text-slate-700">Producto medible (kg/lt)</span>
+      </label>
+      <p className="text-xs text-slate-500">
+        Si está marcado, las variantes requerirán segunda unidad (kg o lt) para calcular totales consolidados.
+      </p>
+
       {state.message ? (
         <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-600"}`}>{state.message}</p>
       ) : null}

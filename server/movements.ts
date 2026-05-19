@@ -3,6 +3,7 @@ import type {
   Movement,
   MovementHistoryFilters,
   MovementHistoryRow,
+  PaginatedMovements,
   TransferInTransit,
   TransferInTransitWithItems,
 } from "@/types/movement";
@@ -245,47 +246,50 @@ type MovementActor = Pick<Profile, "id" | "full_name" | "username">;
 type MovementWarehouse = Pick<Warehouse, "id" | "name" | "code">;
 
 export async function listMovementsForHistory(limit = 100): Promise<MovementHistoryRow[]> {
-  return listMovementsForHistoryWithFilters({ limit });
+  const result = await listMovementsForHistoryWithFilters({ limit });
+  return result.movements;
 }
 
-export async function listMovementsForHistoryWithFilters(filters: MovementHistoryFilters): Promise<MovementHistoryRow[]> {
+export async function listMovementsForHistoryWithFilters(filters: MovementHistoryFilters): Promise<PaginatedMovements> {
   const adminClient = createSupabaseAdminClient();
 
-  const limit = filters.limit ?? 100;
-  let query = adminClient
+  const offset = filters.offset ?? 0;
+  const limit = filters.limit ?? 20;
+
+  let baseQuery = adminClient
     .from("movements")
     .select(
-      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at",
+      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at, edit_history",
+      { count: "exact" },
     )
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("created_at", { ascending: false });
 
   if (filters.movementType) {
-    query = query.eq("movement_type", filters.movementType);
+    baseQuery = baseQuery.eq("movement_type", filters.movementType);
   }
 
   if (filters.status) {
-    query = query.eq("status", filters.status);
+    baseQuery = baseQuery.eq("status", filters.status);
   }
 
   if (filters.warehouseId) {
-    query = query.or(
+    baseQuery = baseQuery.or(
       `origin_warehouse_id.eq.${filters.warehouseId},destination_warehouse_id.eq.${filters.warehouseId}`,
     );
   }
 
   if (filters.from) {
-    query = query.gte("created_at", `${filters.from}T00:00:00`);
+    baseQuery = baseQuery.gte("created_at", `${filters.from}T00:00:00`);
   }
 
   if (filters.to) {
-    query = query.lte("created_at", `${filters.to}T23:59:59`);
+    baseQuery = baseQuery.lte("created_at", `${filters.to}T23:59:59`);
   }
 
-  const { data: movements, error } = await query.returns<Movement[]>();
+  const { data: movements, error, count } = await baseQuery.returns<Movement[]>();
 
   if (error || !movements || movements.length === 0) {
-    return [];
+    return { movements: [], total: count ?? 0, offset, limit };
   }
 
   const normalizedSearch = filters.search?.trim().toLowerCase();
@@ -304,19 +308,22 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
       })
     : movements;
 
-  if (filteredMovements.length === 0) {
-    return [];
+  const totalFiltered = filteredMovements.length;
+  const paginatedMovements = filteredMovements.slice(offset, offset + limit);
+
+  if (paginatedMovements.length === 0) {
+    return { movements: [], total: totalFiltered, offset, limit };
   }
 
   const warehouseIds = Array.from(
     new Set(
-      filteredMovements
+      paginatedMovements
         .flatMap((movement) => [movement.origin_warehouse_id, movement.destination_warehouse_id])
         .filter((id): id is string => Boolean(id)),
     ),
   );
 
-  const actorIds = Array.from(new Set(filteredMovements.map((movement) => movement.created_by)));
+  const actorIds = Array.from(new Set(paginatedMovements.map((movement) => movement.created_by)));
 
   const [{ data: warehouses }, { data: actors }] = await Promise.all([
     warehouseIds.length > 0
@@ -330,21 +337,65 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
   const warehouseMap = new Map((warehouses ?? []).map((warehouse) => [warehouse.id, `${warehouse.code} - ${warehouse.name}`]));
   const actorMap = new Map((actors ?? []).map((actor) => [actor.id, actor.full_name ?? actor.username]));
 
-  return filteredMovements.map((movement) => ({
-    id: movement.id,
-    movement_type: movement.movement_type,
-    status: movement.status,
-    origin_warehouse_name: movement.origin_warehouse_id ? warehouseMap.get(movement.origin_warehouse_id) ?? movement.origin_warehouse_id : null,
-    destination_warehouse_name: movement.destination_warehouse_id
-      ? warehouseMap.get(movement.destination_warehouse_id) ?? movement.destination_warehouse_id
-      : null,
-    actor_name: actorMap.get(movement.created_by) ?? movement.created_by,
-    created_at: movement.created_at,
-    notes: movement.notes,
-    incident_note: movement.incident_note,
-    adjustment_reason: movement.adjustment_reason,
-    adjustment_direction: movement.adjustment_direction,
-  }));
+  const movementIds = paginatedMovements.map((m) => m.id);
+  let itemsMap: Map<string, Array<{ product_variant_id: string; product_variant_name: string; sku: string | null; quantity: number }>> = new Map();
+
+  if (movementIds.length > 0) {
+    const { data: itemRows } = await adminClient
+      .from("movement_items")
+      .select("movement_id, product_variant_id, quantity")
+      .in("movement_id", movementIds)
+      .returns<{ movement_id: string; product_variant_id: string; quantity: number }[]>();
+
+    if (itemRows && itemRows.length > 0) {
+      const variantIds = [...new Set(itemRows.map((i) => i.product_variant_id))];
+      const { data: variants } = await adminClient
+        .from("product_variants")
+        .select("id, name, sku")
+        .in("id", variantIds)
+        .returns<{ id: string; name: string; sku: string | null }[]>();
+
+      const variantMap = new Map((variants ?? []).map((v) => [v.id, v]));
+
+      for (const item of itemRows) {
+        const existing = itemsMap.get(item.movement_id) ?? [];
+        existing.push({
+          product_variant_id: item.product_variant_id,
+          product_variant_name: variantMap.get(item.product_variant_id)?.name ?? "Desconocido",
+          sku: variantMap.get(item.product_variant_id)?.sku ?? null,
+          quantity: item.quantity,
+        });
+        itemsMap.set(item.movement_id, existing);
+      }
+    }
+  }
+
+  return {
+    movements: paginatedMovements.map((movement) => {
+      const editHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
+      return {
+        id: movement.id,
+        movement_type: movement.movement_type,
+        status: movement.status,
+        origin_warehouse_name: movement.origin_warehouse_id ? warehouseMap.get(movement.origin_warehouse_id) ?? movement.origin_warehouse_id : null,
+        destination_warehouse_name: movement.destination_warehouse_id
+          ? warehouseMap.get(movement.destination_warehouse_id) ?? movement.destination_warehouse_id
+          : null,
+        actor_name: actorMap.get(movement.created_by) ?? movement.created_by,
+        created_at: movement.created_at,
+        notes: movement.notes,
+        incident_note: movement.incident_note,
+        adjustment_reason: movement.adjustment_reason,
+        adjustment_direction: movement.adjustment_direction,
+        edit_count: editHistory.length,
+        is_incident: movement.status === "received_with_incident",
+        items: itemsMap.get(movement.id) ?? [],
+      };
+    }),
+    total: totalFiltered,
+    offset,
+    limit,
+  };
 }
 
 export async function getMovementWithItems(movementId: string): Promise<MovementWithItems | null> {
@@ -353,7 +404,7 @@ export async function getMovementWithItems(movementId: string): Promise<Movement
   const { data: movement, error } = await adminClient
     .from("movements")
     .select(
-      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at",
+      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at, edit_history",
     )
     .eq("id", movementId)
     .single();

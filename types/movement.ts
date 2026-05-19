@@ -1,5 +1,12 @@
 import type { AdjustmentDirection, MovementStatus, MovementType } from "@/types/domain";
 
+export type PaginatedMovements = {
+  movements: MovementHistoryRow[];
+  total: number;
+  offset: number;
+  limit: number;
+};
+
 export type MovementHistoryFilters = {
   movementType?: MovementType;
   status?: MovementStatus;
@@ -7,6 +14,7 @@ export type MovementHistoryFilters = {
   search?: string;
   from?: string;
   to?: string;
+  offset?: number;
   limit?: number;
 };
 
@@ -25,6 +33,7 @@ export type Movement = {
   confirmed_at: string;
   received_by: string | null;
   received_at: string | null;
+  edit_history: Record<string, unknown>[] | null;
 };
 
 export type TransferInTransit = {
@@ -60,4 +69,12 @@ export type MovementHistoryRow = {
   incident_note: string | null;
   adjustment_reason: string | null;
   adjustment_direction: AdjustmentDirection | null;
+  edit_count: number;
+  is_incident: boolean;
+  items: Array<{
+    product_variant_id: string;
+    product_variant_name: string;
+    sku: string | null;
+    quantity: number;
+  }>;
 };

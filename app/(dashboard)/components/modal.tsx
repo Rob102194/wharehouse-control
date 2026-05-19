@@ -7,9 +7,16 @@ type ModalProps = {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: "sm" | "md" | "lg";
 };
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+const SIZE_CLASSES = {
+  sm: "max-w-sm",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+};
+
+export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -28,7 +35,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   return (
     <dialog
       ref={dialogRef}
-      className="m-auto w-full max-w-lg rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/50"
+      className={`m-auto w-full ${SIZE_CLASSES[size]} rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-slate-900/50`}
       onClose={onClose}
       onClick={(e) => {
         if (e.target === dialogRef.current) {

@@ -1,7 +1,8 @@
 import { requireRole } from "@/server/profile";
-import { listWarehouseStockWithFilters } from "@/server/stock";
+import { getProductStockSummary, listWarehouseStockWithFilters } from "@/server/stock";
 import { listWarehouses } from "@/server/warehouses";
 import { StockFilters } from "./stock-filters";
+import { StockViewToggle } from "./stock-view-toggle";
 
 type StockPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -29,15 +30,18 @@ export default async function StockPage({ searchParams }: StockPageProps) {
     limit: 500,
   };
 
-  const [stockRows, warehouses] = await Promise.all([
+  const [stockRows, warehouses, productSummaries] = await Promise.all([
     listWarehouseStockWithFilters(filters),
     listWarehouses(),
+    getProductStockSummary(filters.warehouseId ?? undefined),
   ]);
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-2xl font-semibold text-slate-900">Stock actual</h2>
-      <p className="text-slate-600">Vista derivada desde la view `warehouse_stock`.</p>
+    <section className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-semibold text-slate-900">Stock actual</h2>
+        <p className="text-slate-600">Vista derivada desde la view `warehouse_stock`.</p>
+      </div>
 
       <StockFilters warehouses={warehouses} values={filters} />
 
@@ -70,6 +74,11 @@ export default async function StockPage({ searchParams }: StockPageProps) {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h3 className="mb-3 text-base font-semibold text-slate-900">Stock consolidado por producto</h3>
+        <StockViewToggle summaries={productSummaries} />
       </div>
     </section>
   );

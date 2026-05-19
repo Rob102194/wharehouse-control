@@ -2,6 +2,21 @@ import { createSupabaseAdminClient } from "@/supabase/admin";
 import type { Warehouse } from "@/types/warehouse";
 import type { WarehouseStock, WarehouseStockFilters } from "@/types/warehouse-stock";
 
+export type ProductStockSummary = {
+  product_id: string;
+  product_name: string;
+  is_measurable: boolean;
+  variants: Array<{
+    variant_id: string;
+    variant_name: string;
+    unit_name: string | null;
+    secondary_unit: string | null;
+    secondary_quantity: number | null;
+    stock: number;
+  }>;
+  total_by_secondary_unit: Record<string, number>;
+};
+
 type WarehouseStockRow = {
   warehouse_id: string;
   product_variant_id: string;
@@ -77,4 +92,32 @@ export async function listWarehouseStockWithFilters(filters: WarehouseStockFilte
     const haystack = `${row.product_variant_name} ${row.sku ?? ""} ${row.product_variant_id}`.toLowerCase();
     return haystack.includes(normalizedSearch);
   });
+}
+
+export async function getProductStockSummary(warehouseId?: string): Promise<ProductStockSummary[]> {
+  const adminClient = createSupabaseAdminClient();
+
+  const { data, error } = await adminClient.rpc("get_product_stock_summary", {
+    p_warehouse_id: warehouseId ?? null,
+  });
+
+  if (error || !data) {
+    console.error("Error getting product stock summary:", error);
+    return [];
+  }
+
+  return data.map((row: Record<string, unknown>) => ({
+    product_id: row.product_id as string,
+    product_name: row.product_name as string,
+    is_measurable: row.is_measurable as boolean,
+    variants: (row.variants as Array<Record<string, unknown>>).map((v) => ({
+      variant_id: v.variant_id as string,
+      variant_name: v.variant_name as string,
+      unit_name: v.unit_name as string | null,
+      secondary_unit: v.secondary_unit as string | null,
+      secondary_quantity: v.secondary_quantity as number | null,
+      stock: v.stock as number,
+    })),
+    total_by_secondary_unit: row.total_by_secondary_unit as Record<string, number>,
+  }));
 }

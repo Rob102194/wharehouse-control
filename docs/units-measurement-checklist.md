@@ -65,15 +65,20 @@ Objetivo: implementar sistema de segunda unidad de medida para productos medible
 
 ## 10) UI - Stock
 
-- [ ] Actualizar página de stock
-  - [ ] Vista por variante (default)
-  - [ ] Vista consolidada por producto
-  - [ ] Mostrar totales por segunda unidad
+- [x] Actualizar página de stock
+  - [x] Vista por variante (default) - existente
+  - [x] Vista consolidada por producto - toggle implementado
+  - [x] Mostrar totales por segunda unidad - funcionando
 
 ## 11) Migración de datos
 
-- [ ] Eliminar productos de prueba existentes (3 registros)
-- [ ] Crear productos de prueba con nuevo esquema
+- [x] Datos existentes actualizados con segunda unidad (kg/lt)
+- [x] Productos de prueba creados:
+  - Atún (medible, kg): Lata 0.15kg, Paquete 0.9kg
+  - Aceite de oliva (medible, lt): Botella 500ml, Botella 1L, Galón 5L
+  - Arroz (medible, kg): Bolsa 1kg, Saco 25kg
+  - Servilletas (NO medible): Paquete 100 unidades
+- [x] RPC `get_product_stock_summary` funciona correctamente
 
 ## 12) Reglas a no romper
 

@@ -33,6 +33,32 @@ export async function listWarehouseStock(): Promise<WarehouseStock[]> {
   return listWarehouseStockWithFilters({ onlyPositive: true, limit: 500 });
 }
 
+export async function getStockForVariants(
+  warehouseId: string,
+  variantIds: string[],
+): Promise<Map<string, number>> {
+  if (variantIds.length === 0) {
+    return new Map();
+  }
+
+  const adminClient = createSupabaseAdminClient();
+  const { data, error } = await adminClient
+    .from("warehouse_stock")
+    .select("product_variant_id, stock")
+    .eq("warehouse_id", warehouseId)
+    .in("product_variant_id", variantIds);
+
+  if (error || !data) {
+    return new Map();
+  }
+
+  const result = new Map<string, number>();
+  for (const row of data) {
+    result.set(row.product_variant_id, row.stock);
+  }
+  return result;
+}
+
 export async function listWarehouseStockWithFilters(filters: WarehouseStockFilters): Promise<WarehouseStock[]> {
   const adminClient = createSupabaseAdminClient();
   const limit = filters.limit ?? 500;

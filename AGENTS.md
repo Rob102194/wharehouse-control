@@ -42,7 +42,8 @@ Inventory operations work with product variants, not only base products.
 ## Core business model
 Stock must be derived from confirmed inventory movements.
 
-Never treat free manual stock editing as the source of truth.
+Stock editing with audit trail is allowed for inventory reconciliation.
+Every stock modification must include a mandatory reason for traceability.
 
 Movement types in MVP:
 - entry
@@ -54,17 +55,17 @@ Business meaning:
 - entry: increases stock in a warehouse
 - exit: decreases stock in a warehouse
 - transfer: moves stock from one warehouse to another with dispatch and receipt confirmation
-- adjustment: controlled correction, admin-only
+- adjustment: controlled correction (operators and admins can create)
 
 Purchases are modeled as entries.
 Kitchen dispatches are modeled as exits.
 The system does not track stock after a kitchen exit.
 
 ## Non-negotiable movement rules
-- A confirmed movement must be immutable in practice.
-- Corrections must happen through adjustments or compensating movements.
-- No exit may reduce stock below available quantity.
-- No transfer dispatch may reduce stock below available quantity.
+- A confirmed movement can be edited with audit trail, preserving original timestamp.
+- Corrections can happen through adjustments, compensatory movements, or direct editing.
+- Exit operations may reduce stock below zero (allowed with visible warning).
+- Transfer dispatch may reduce stock below zero (allowed with visible warning).
 - Transfer origin and destination must be different warehouses.
 - Transfer dispatch decreases origin stock.
 - Destination stock increases only after receipt confirmation.

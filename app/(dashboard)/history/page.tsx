@@ -3,6 +3,7 @@ import { listMovementsForHistoryWithFilters } from "@/server/movements";
 import { listWarehouses } from "@/server/warehouses";
 import type { MovementStatus, MovementType } from "@/types/domain";
 import { HistoryFilters } from "./history-filters";
+import { HistoryTable } from "./history-table";
 
 const MOVEMENT_TYPES = new Set<MovementType>(["entry", "exit", "transfer", "adjustment"]);
 const MOVEMENT_STATUSES = new Set<MovementStatus>(["confirmed", "in_transit", "received", "received_with_incident"]);
@@ -48,52 +49,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
 
       <HistoryFilters warehouses={warehouses} values={filters} />
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <th className="px-3 py-2 font-medium">Fecha</th>
-              <th className="px-3 py-2 font-medium">Tipo</th>
-              <th className="px-3 py-2 font-medium">Estado</th>
-              <th className="px-3 py-2 font-medium">Origen</th>
-              <th className="px-3 py-2 font-medium">Destino</th>
-              <th className="px-3 py-2 font-medium">Actor</th>
-              <th className="px-3 py-2 font-medium">Notas</th>
-              <th className="px-3 py-2 font-medium">Incidencia</th>
-              <th className="px-3 py-2 font-medium">Ajuste</th>
-              <th className="px-3 py-2 font-medium">ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {movements.length === 0 ? (
-              <tr className="border-t border-slate-200">
-                <td colSpan={10} className="px-3 py-6 text-center text-sm text-slate-500">
-                  No hay movimientos para los filtros seleccionados.
-                </td>
-              </tr>
-            ) : (
-              movements.map((movement) => (
-                <tr key={movement.id} className="border-t border-slate-200">
-                  <td className="px-3 py-3 text-sm text-slate-700">{new Date(movement.created_at).toLocaleString("es-ES")}</td>
-                  <td className="px-3 py-3 text-sm font-medium text-slate-900">{movement.movement_type}</td>
-                  <td className="px-3 py-3 text-sm text-slate-700">{movement.status}</td>
-                  <td className="px-3 py-3 text-xs text-slate-600">{movement.origin_warehouse_name ?? "-"}</td>
-                  <td className="px-3 py-3 text-xs text-slate-600">{movement.destination_warehouse_name ?? "-"}</td>
-                  <td className="px-3 py-3 text-xs text-slate-600">{movement.actor_name}</td>
-                  <td className="max-w-40 truncate px-3 py-3 text-xs text-slate-600">{movement.notes ?? "-"}</td>
-                  <td className="max-w-40 truncate px-3 py-3 text-xs text-slate-600">{movement.incident_note ?? "-"}</td>
-                  <td className="max-w-44 truncate px-3 py-3 text-xs text-slate-600">
-                    {movement.adjustment_reason
-                      ? `${movement.adjustment_direction ?? ""}: ${movement.adjustment_reason}`
-                      : "-"}
-                  </td>
-                  <td className="px-3 py-3 text-xs text-slate-500">{movement.id}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <HistoryTable movements={movements} />
     </section>
   );
 }

@@ -86,10 +86,10 @@ export function StockViewToggle({ summaries }: StockViewToggleProps) {
                         {summary.variants.map((v, idx) => (
                           <span
                             key={`${v.variant_id}-${idx}`}
-                            className="rounded bg-slate-100 px-1.5 py-0.5 text-xs"
+                            className={`rounded px-1.5 py-0.5 text-xs ${v.stock < 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100"}`}
                             title={`${v.stock} unidades`}
                           >
-                            {v.variant_name} ({v.stock})
+                            {v.variant_name} ({v.stock < 0 ? `${v.stock.toFixed(3)} ⚠` : v.stock.toFixed(3)})
                           </span>
                         ))}
                       </div>

@@ -346,3 +346,59 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
     adjustment_direction: movement.adjustment_direction,
   }));
 }
+
+export async function getMovementWithItems(movementId: string): Promise<MovementWithItems | null> {
+  const adminClient = createSupabaseAdminClient();
+
+  const { data: movement, error } = await adminClient
+    .from("movements")
+    .select(
+      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at",
+    )
+    .eq("id", movementId)
+    .single();
+
+  if (error || !movement) {
+    return null;
+  }
+
+  const { data: items, error: itemsError } = await adminClient
+    .from("movement_items")
+    .select("id, product_variant_id, quantity")
+    .eq("movement_id", movementId)
+    .returns<{ id: string; product_variant_id: string; quantity: number }[]>();
+
+  if (itemsError || !items) {
+    return { ...movement, items: [] };
+  }
+
+  const variantIds = items.map((item) => item.product_variant_id);
+  const { data: variants } = await adminClient
+    .from("product_variants")
+    .select("id, name, sku")
+    .in("id", variantIds)
+    .returns<{ id: string; name: string; sku: string | null }[]>();
+
+  const variantMap = new Map((variants ?? []).map((v) => [v.id, v]));
+
+  return {
+    ...movement,
+    items: items.map((item) => ({
+      id: item.id,
+      product_variant_id: item.product_variant_id,
+      product_variant_name: variantMap.get(item.product_variant_id)?.name ?? "Desconocido",
+      sku: variantMap.get(item.product_variant_id)?.sku ?? null,
+      quantity: item.quantity,
+    })),
+  };
+}
+
+type MovementWithItems = Movement & {
+  items: Array<{
+    id: string;
+    product_variant_id: string;
+    product_variant_name: string;
+    sku: string | null;
+    quantity: number;
+  }>;
+};

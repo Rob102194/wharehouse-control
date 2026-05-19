@@ -11,6 +11,7 @@ import {
   OperationLineItemsForm,
   type OperationItemRow,
 } from "@/app/(dashboard)/operations/components/operation-line-items-form";
+import { useStockCheck, StockWarnings } from "@/app/(dashboard)/operations/components/stock-warnings";
 import type { ProductVariant } from "@/types/product-variant";
 import type { Warehouse } from "@/types/warehouse";
 
@@ -28,6 +29,12 @@ const initialState: OperationActionState = {
 export function TransferOutForm({ warehouse, warehouses, variants }: TransferOutFormProps) {
   const [state, formAction] = useActionState(createTransferAction, initialState);
   const [items, setItems] = useState<OperationItemRow[]>([]);
+
+  const { warnings } = useStockCheck({
+    warehouseId: warehouse.id,
+    items,
+    variants,
+  });
 
   useEffect(() => {
     if (!state.ok) {
@@ -99,6 +106,8 @@ export function TransferOutForm({ warehouse, warehouses, variants }: TransferOut
         lineErrors={state.lineErrors}
         emptyMessage="Busca y selecciona productos para transferir."
       />
+
+      <StockWarnings warnings={warnings} />
 
       <label className="block space-y-1 text-sm">
         <span className="font-medium text-slate-700">Nota de transferencia (opcional)</span>

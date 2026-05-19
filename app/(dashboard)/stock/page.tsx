@@ -3,6 +3,7 @@ import { getProductStockSummary, listWarehouseStockWithFilters } from "@/server/
 import { listWarehouses } from "@/server/warehouses";
 import { StockFilters } from "./stock-filters";
 import { StockViewToggle } from "./stock-view-toggle";
+import { StockTable } from "./stock-table";
 
 type StockPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -45,36 +46,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
 
       <StockFilters warehouses={warehouses} values={filters} />
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <th className="px-3 py-2 font-medium">Almacen</th>
-              <th className="px-3 py-2 font-medium">Variante</th>
-              <th className="px-3 py-2 font-medium">SKU</th>
-              <th className="px-3 py-2 font-medium">Stock</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stockRows.length === 0 ? (
-              <tr className="border-t border-slate-200">
-                <td colSpan={4} className="px-3 py-6 text-center text-sm text-slate-500">
-                  No hay filas de stock para los filtros seleccionados.
-                </td>
-              </tr>
-            ) : (
-              stockRows.map((row) => (
-                <tr key={`${row.warehouse_id}-${row.product_variant_id}`} className="border-t border-slate-200">
-                  <td className="px-3 py-3 text-sm text-slate-800">{row.warehouse_name}</td>
-                  <td className="px-3 py-3 text-sm text-slate-800">{row.product_variant_name}</td>
-                  <td className="px-3 py-3 text-sm text-slate-600">{row.sku ?? "-"}</td>
-                  <td className="px-3 py-3 text-sm font-semibold text-slate-900">{Number(row.stock).toFixed(3)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <StockTable stockRows={stockRows} />
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h3 className="mb-3 text-base font-semibold text-slate-900">Stock consolidado por producto</h3>

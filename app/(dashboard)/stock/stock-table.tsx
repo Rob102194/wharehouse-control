@@ -14,9 +14,10 @@ type StockRow = {
 
 type StockTableProps = {
   stockRows: StockRow[];
+  canAdjust?: boolean;
 };
 
-export function StockTable({ stockRows }: StockTableProps) {
+export function StockTable({ stockRows, canAdjust }: StockTableProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<StockRow | null>(null);
 
@@ -67,12 +68,14 @@ export function StockTable({ stockRows }: StockTableProps) {
                     )}
                   </td>
                   <td className="px-3 py-3">
-                    <button
-                      onClick={() => openAdjustment(row)}
-                      className="rounded px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50"
-                    >
-                      Ajustar
-                    </button>
+                    {canAdjust && (
+                      <button
+                        onClick={() => openAdjustment(row)}
+                        className="rounded px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50"
+                      >
+                        Ajustar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

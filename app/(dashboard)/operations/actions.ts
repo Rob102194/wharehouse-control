@@ -3,13 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/profile";
 import {
-  createAdjustment,
   createEntry,
   createExit,
   createTransfer,
   receiveTransfer,
 } from "@/server/movements";
-import type { AdjustmentDirection } from "@/types/domain";
 import type { MovementRpcItemInput, TransferReceiptItemInput } from "@/types/movement-item";
 
 export type OperationActionState = {
@@ -253,8 +251,8 @@ function mapOperationErrorMessage(message: string) {
     return "Tu rol no puede confirmar recepciones.";
   }
 
-  if (message.includes("Only admin can create adjustments")) {
-    return "Solo un administrador puede crear ajustes.";
+  if (message.includes("Actor role cannot create adjustments")) {
+    return "Tu rol no puede crear ajustes.";
   }
 
   if (message.includes("Received quantity cannot exceed dispatched quantity")) {
@@ -408,47 +406,4 @@ export async function receiveTransferAction(
   }
 }
 
-export async function createAdjustmentAction(
-  _prev: OperationActionState,
-  formData: FormData,
-): Promise<OperationActionState> {
-  const actor = await requireRole(["admin"]);
 
-  try {
-    const warehouseId = sanitize(formData.get("warehouse_id"));
-    const direction = sanitize(formData.get("adjustment_direction")) as AdjustmentDirection;
-    const reason = sanitize(formData.get("adjustment_reason"));
-    const notes = sanitize(formData.get("notes"));
-    const validatedItems = validateMovementItems(sanitize(formData.get("items_json")));
-
-    if (!warehouseId) {
-      return errorState("Debes seleccionar almacen del ajuste.", {
-        fieldErrors: { warehouse_id: "Debes seleccionar almacen del ajuste." },
-      });
-    }
-
-    if (direction !== "positive" && direction !== "negative") {
-      return errorState("Direccion de ajuste invalida.", {
-        fieldErrors: { adjustment_direction: "Direccion de ajuste invalida." },
-      });
-    }
-
-    if (!reason) {
-      return errorState("La razon del ajuste es obligatoria.", {
-        fieldErrors: { adjustment_reason: "La razon del ajuste es obligatoria." },
-      });
-    }
-
-    if (!validatedItems.ok) {
-      return errorState(validatedItems.message, { lineErrors: validatedItems.lineErrors });
-    }
-
-    const movementId = await createAdjustment(warehouseId, actor.id, direction, reason, validatedItems.items, notes);
-    revalidateOperationalViews();
-
-    return successState(`Ajuste creado (${movementId}).`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "No se pudo crear el ajuste.";
-    return errorState(mapOperationErrorMessage(message));
-  }
-}

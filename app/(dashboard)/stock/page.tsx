@@ -18,7 +18,7 @@ function asValue(value: string | string[] | undefined): string | undefined {
 }
 
 export default async function StockPage({ searchParams }: StockPageProps) {
-  await requireRole(["admin", "operator", "owner"]);
+  const profile = await requireRole(["admin", "operator", "owner"]);
   const params = (await searchParams) ?? {};
 
   const onlyPositiveParam = asValue(params.onlyPositive);
@@ -46,7 +46,7 @@ export default async function StockPage({ searchParams }: StockPageProps) {
 
       <StockFilters warehouses={warehouses} values={filters} />
 
-      <StockTable stockRows={stockRows} />
+      <StockTable stockRows={stockRows} canAdjust={profile.role !== "owner"} />
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h3 className="mb-3 text-base font-semibold text-slate-900">Stock consolidado por producto</h3>

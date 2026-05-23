@@ -377,7 +377,9 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
         id: movement.id,
         movement_type: movement.movement_type,
         status: movement.status,
+        origin_warehouse_id: movement.origin_warehouse_id,
         origin_warehouse_name: movement.origin_warehouse_id ? warehouseMap.get(movement.origin_warehouse_id) ?? movement.origin_warehouse_id : null,
+        destination_warehouse_id: movement.destination_warehouse_id,
         destination_warehouse_name: movement.destination_warehouse_id
           ? warehouseMap.get(movement.destination_warehouse_id) ?? movement.destination_warehouse_id
           : null,
@@ -453,3 +455,87 @@ type MovementWithItems = Movement & {
     quantity: number;
   }>;
 };
+
+export async function createCompensationMovement(
+  originalMovement: Movement,
+  items: Array<{ product_variant_id: string; quantity: number }>,
+  createdBy: string,
+): Promise<string> {
+  const adminClient = createSupabaseAdminClient();
+  const compensationItems: MovementRpcItemInput[] = items.map((item) => ({
+    product_variant_id: item.product_variant_id,
+    quantity: item.quantity,
+  }));
+
+  switch (originalMovement.movement_type) {
+    case "entry": {
+      if (!originalMovement.origin_warehouse_id) {
+        throw new Error("Entry movement has no origin warehouse");
+      }
+      const { data, error } = await adminClient.rpc("create_exit", {
+        p_origin_warehouse_id: originalMovement.origin_warehouse_id,
+        p_created_by: createdBy,
+        p_items: compensationItems,
+        p_notes: `Compensación por edición de movimiento ${originalMovement.id}`,
+        p_allow_negative: true,
+      });
+      if (error || !data) {
+        throw new Error(normalizeRpcError(error?.message ?? "Error al crear compensación (exit)"));
+      }
+      return data as string;
+    }
+    case "exit": {
+      if (!originalMovement.origin_warehouse_id) {
+        throw new Error("Exit movement has no origin warehouse");
+      }
+      const { data, error } = await adminClient.rpc("create_entry", {
+        p_destination_warehouse_id: originalMovement.origin_warehouse_id,
+        p_created_by: createdBy,
+        p_items: compensationItems,
+        p_notes: `Compensación por edición de movimiento ${originalMovement.id}`,
+      });
+      if (error || !data) {
+        throw new Error(normalizeRpcError(error?.message ?? "Error al crear compensación (entry)"));
+      }
+      return data as string;
+    }
+    case "transfer": {
+      if (!originalMovement.origin_warehouse_id || !originalMovement.destination_warehouse_id) {
+        throw new Error("Transfer movement has missing warehouses");
+      }
+      const { data, error } = await adminClient.rpc("create_transfer", {
+        p_origin_warehouse_id: originalMovement.destination_warehouse_id,
+        p_destination_warehouse_id: originalMovement.origin_warehouse_id,
+        p_created_by: createdBy,
+        p_items: compensationItems,
+        p_notes: `Compensación por edición de movimiento ${originalMovement.id}`,
+        p_allow_negative: true,
+      });
+      if (error || !data) {
+        throw new Error(normalizeRpcError(error?.message ?? "Error al crear compensación (transfer)"));
+      }
+      return data as string;
+    }
+    case "adjustment": {
+      if (!originalMovement.origin_warehouse_id) {
+        throw new Error("Adjustment movement has no warehouse");
+      }
+      const direction = originalMovement.adjustment_direction === "positive" ? "negative" : "positive";
+      const { data, error } = await adminClient.rpc("create_adjustment", {
+        p_warehouse_id: originalMovement.origin_warehouse_id,
+        p_created_by: createdBy,
+        p_adjustment_direction: direction,
+        p_adjustment_reason: `Compensación por edición de movimiento ${originalMovement.id}`,
+        p_items: compensationItems,
+        p_notes: `Compensación por edición de movimiento ${originalMovement.id}`,
+        p_allow_negative: true,
+      });
+      if (error || !data) {
+        throw new Error(normalizeRpcError(error?.message ?? "Error al crear compensación (adjustment)"));
+      }
+      return data as string;
+    }
+    default:
+      throw new Error(`Unsupported movement type for compensation: ${originalMovement.movement_type}`);
+  }
+}

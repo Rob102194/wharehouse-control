@@ -61,7 +61,9 @@ export type MovementHistoryRow = {
   id: string;
   movement_type: MovementType;
   status: MovementStatus;
+  origin_warehouse_id: string | null;
   origin_warehouse_name: string | null;
+  destination_warehouse_id: string | null;
   destination_warehouse_name: string | null;
   actor_name: string;
   created_at: string;
@@ -72,9 +74,33 @@ export type MovementHistoryRow = {
   edit_count: number;
   is_incident: boolean;
   items: Array<{
+    id?: string;
     product_variant_id: string;
     product_variant_name: string;
     sku: string | null;
     quantity: number;
   }>;
+};
+
+export type EditableMovementItem = {
+  id?: string;
+  product_variant_id: string;
+  product_variant_name: string;
+  sku: string | null;
+  quantity: number;
+  _status?: "existing" | "added" | "deleted";
+};
+
+export type MovementEditRequest = {
+  movement_id: string;
+  origin_warehouse_id: string | null;
+  destination_warehouse_id: string | null;
+  items: Array<{
+    product_variant_id: string;
+    quantity: number;
+  }>;
+  notes: string | null;
+  adjustment_reason: string | null;
+  incident_note: string | null;
+  edit_reason: string;
 };

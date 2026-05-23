@@ -79,13 +79,14 @@ Warehouse operator:
 - create exits
 - create transfers
 - confirm incoming transfers
+- adjustments
 - consult relevant stock and history
 
 Administrator:
 - manage warehouses
 - manage products and variants
 - manage users
-- create adjustments
+- adjustments
 - consult all records
 
 Owner / read-only:

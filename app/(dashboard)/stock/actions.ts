@@ -32,8 +32,8 @@ export async function quickStockAdjustmentAction(prevState: unknown, formData: F
   const adminClient = createSupabaseAdminClient();
 
   const { data: currentStock, error: fetchError } = await adminClient
-    .from("stock")
-    .select("quantity")
+    .from("warehouse_stock")
+    .select("stock")
     .eq("warehouse_id", warehouseId)
     .eq("product_variant_id", productVariantId)
     .single();
@@ -42,7 +42,7 @@ export async function quickStockAdjustmentAction(prevState: unknown, formData: F
     return { ok: false, message: "Error al obtener stock actual" };
   }
 
-  const currentQty = currentStock?.quantity ?? 0;
+  const currentQty = currentStock?.stock ?? 0;
   const diff = newStock - currentQty;
 
   if (Math.abs(diff) < 0.001) {

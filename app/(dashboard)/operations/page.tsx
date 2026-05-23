@@ -3,7 +3,7 @@ import { requireRole } from "@/server/profile";
 import { OperationsHub } from "@/app/(dashboard)/operations/operations-hub";
 
 export default async function OperationsPage() {
-  const profile = await requireRole(["admin", "operator"]);
+  await requireRole(["admin", "operator"]);
   const warehouses = await listActiveWarehouses();
 
   return (
@@ -13,7 +13,7 @@ export default async function OperationsPage() {
         Selecciona un almacen activo para iniciar una tarea operativa. Este contexto aplica solo durante la sesion actual de
         navegacion.
       </p>
-      <OperationsHub warehouses={warehouses} canCreateAdjustment={profile.role === "admin"} />
+      <OperationsHub warehouses={warehouses} />
     </section>
   );
 }

@@ -7,7 +7,6 @@ import type { Warehouse } from "@/types/warehouse";
 
 type OperationsHubProps = {
   warehouses: Warehouse[];
-  canCreateAdjustment: boolean;
 };
 
 type OperationCard = {
@@ -65,7 +64,7 @@ const SECONDARY_FLOW_CARDS: OperationCard[] = [
   },
 ];
 
-export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHubProps) {
+export function OperationsHub({ warehouses }: OperationsHubProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const activeWarehouseId = searchParams.get("warehouseId") ?? "";
@@ -180,25 +179,7 @@ export function OperationsHub({ warehouses, canCreateAdjustment }: OperationsHub
             </Link>
           ))}
 
-          {canCreateAdjustment ? (
-            <Link
-              href={buildFlowHref({
-                id: "adjustment",
-                title: "Ajuste administrativo",
-                description: "",
-                hrefPath: "/operations/adjustment",
-              })}
-              aria-disabled={!activeWarehouse}
-              className={`rounded-xl border p-4 transition ${
-                activeWarehouse
-                  ? "border-amber-200 bg-amber-50 shadow-sm hover:border-amber-300 hover:shadow"
-                  : "pointer-events-none border-slate-200 bg-slate-50 opacity-70"
-              }`}
-            >
-              <p className="text-sm font-semibold text-amber-900">Ajuste administrativo</p>
-              <p className="mt-1 text-sm text-amber-800">Correccion controlada para conciliacion de inventario.</p>
-            </Link>
-          ) : null}
+    
         </div>
       </section>
     </div>

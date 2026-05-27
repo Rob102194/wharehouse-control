@@ -52,6 +52,10 @@ export async function quickStockAdjustmentAction(prevState: unknown, formData: F
   const direction = diff > 0 ? "positive" : "negative";
   const absDiff = Math.abs(diff);
 
+  const notes = direction === "positive"
+    ? `Ajuste positivo: stock aumentó de ${currentQty.toFixed(3)} a ${newStock.toFixed(3)} (+${absDiff.toFixed(3)})`
+    : `Ajuste negativo: stock disminuyó de ${currentQty.toFixed(3)} a ${newStock.toFixed(3)} (-${absDiff.toFixed(3)})`;
+
   try {
     await createAdjustment(
       warehouseId,
@@ -59,7 +63,7 @@ export async function quickStockAdjustmentAction(prevState: unknown, formData: F
       direction,
       reason.trim(),
       [{ product_variant_id: productVariantId, quantity: absDiff }],
-      "Ajuste rápido de stock",
+      notes,
     );
 
     revalidatePath("/stock");

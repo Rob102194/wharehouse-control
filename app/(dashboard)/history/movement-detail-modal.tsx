@@ -92,17 +92,19 @@ export function MovementDetailModal({ movement, isOpen, onClose, warehouses }: M
 
   useEffect(() => {
     if (state.ok) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         onClose();
       }, 500);
+      return () => clearTimeout(timer);
     }
   }, [state.ok, onClose]);
 
   useEffect(() => {
     if (deleteState.ok) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         onClose();
       }, 500);
+      return () => clearTimeout(timer);
     }
   }, [deleteState.ok, onClose]);
 
@@ -501,32 +503,21 @@ export function MovementDetailModal({ movement, isOpen, onClose, warehouses }: M
             <SubmitButton />
           </form>
         ) : (
-          <div className="flex flex-col gap-3 pt-2">
-            <div className="flex justify-between">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Cerrar
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-900"
-              >
-                Editar movimiento
-              </button>
-            </div>
-            <div className="flex justify-center border-t border-slate-200 pt-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
-              >
-                🗑️ Eliminar operación
-              </button>
-            </div>
+          <div className="flex justify-between pt-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+            >
+              🗑️ Eliminar operación
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-900"
+            >
+              Editar movimiento
+            </button>
           </div>
         )}
 

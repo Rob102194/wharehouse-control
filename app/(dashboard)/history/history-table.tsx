@@ -140,6 +140,7 @@ export function HistoryTable({ movements, warehouses }: HistoryTableProps) {
       </div>
 
       <MovementDetailModal
+        key={selectedMovement?.id ?? "none"}
         movement={selectedMovement}
         isOpen={modalOpen}
         onClose={closeModal}

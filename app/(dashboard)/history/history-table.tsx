@@ -33,13 +33,32 @@ function MobileCard({ movement, onClick }: { movement: MovementHistoryRow; onCli
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:shadow-sm md:hidden"
+      className={`w-full rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:shadow-sm md:hidden ${
+        movement.is_deleted ? "opacity-60 bg-red-50/10 border-red-200" : movement.is_compensation ? "text-slate-500 italic bg-slate-50" : movement.is_modified ? "opacity-60 bg-amber-50/10 border-amber-200 text-slate-600 italic" : ""
+      }`}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-500">{formatDate(movement.created_at)}</span>
-        <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeInfo.color}`}>
-          {typeInfo.icon} {typeInfo.label}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {movement.is_deleted && (
+            <span className="rounded bg-red-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-red-700">
+              Eliminado
+            </span>
+          )}
+          {movement.is_compensation && (
+            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-slate-700">
+              Compensación
+            </span>
+          )}
+          {movement.is_modified && (
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-amber-700">
+              Modificado
+            </span>
+          )}
+          <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeInfo.color}`}>
+            {typeInfo.icon} {typeInfo.label}
+          </span>
+        </div>
       </div>
       <div className="mt-2 text-sm">
         {movement.origin_warehouse_name && (
@@ -104,13 +123,32 @@ export function HistoryTable({ movements, warehouses }: HistoryTableProps) {
                 <tr
                   key={movement.id}
                   onClick={() => openModal(movement)}
-                  className="cursor-pointer border-t border-slate-200 transition hover:bg-slate-50"
+                  className={`cursor-pointer border-t border-slate-200 transition hover:bg-slate-50 ${
+                    movement.is_deleted ? "opacity-60 bg-red-50/10 hover:bg-red-50/30" : movement.is_compensation ? "text-slate-500 italic hover:bg-slate-100" : movement.is_modified ? "opacity-60 bg-amber-50/10 hover:bg-amber-50/30 text-slate-500 italic" : ""
+                  }`}
                 >
                   <td className="px-3 py-3 text-sm text-slate-700">{formatDate(movement.created_at)}</td>
                   <td className="px-3 py-3">
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeInfo.color}`}>
-                      {typeInfo.icon} {typeInfo.label}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeInfo.color}`}>
+                        {typeInfo.icon} {typeInfo.label}
+                      </span>
+                      {movement.is_deleted && (
+                        <span className="rounded bg-red-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-red-700">
+                          Eliminado
+                        </span>
+                      )}
+                      {movement.is_compensation && (
+                        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-slate-700">
+                          Compensación
+                        </span>
+                      )}
+                      {movement.is_modified && (
+                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-amber-700">
+                          Modificado
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-slate-600">{movement.origin_warehouse_name ?? "-"}</td>
                   <td className="px-3 py-3 text-xs text-slate-600">

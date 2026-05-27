@@ -81,6 +81,17 @@ export async function editMovementWithCompensationAction(
     return { ok: false, message: "Movimiento no encontrado" };
   }
 
+  const existingEditHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
+  const isDeleted = existingEditHistory.some(entry => entry.deleted === true);
+  if (isDeleted) {
+    return { ok: false, message: "No se puede editar un movimiento eliminado" };
+  }
+
+  const isModified = existingEditHistory.some(entry => entry.new_movement_id !== undefined && entry.new_movement_id !== null);
+  if (isModified) {
+    return { ok: false, message: "No se puede editar un movimiento que ya ha sido modificado y reemplazado" };
+  }
+
   if (movement.movement_type === "transfer" && originWarehouseId === destinationWarehouseId) {
     return { ok: false, message: "Origen y destino deben ser diferentes" };
   }
@@ -149,6 +160,16 @@ export async function editMovementWithCompensationAction(
     return { ok: false, message: "Error al crear movimiento de compensación" };
   }
 
+  if (compensationId) {
+    const { error: markError } = await adminClient
+      .from("movements")
+      .update({ is_compensation: true })
+      .eq("id", compensationId);
+    if (markError) {
+      console.error("Error marking compensation movement:", markError);
+    }
+  }
+
   let newMovementId = "";
   try {
     if (movement.movement_type === "entry") {
@@ -211,7 +232,6 @@ export async function editMovementWithCompensationAction(
     return { ok: false, message: "No se pudo crear el nuevo movimiento" };
   }
 
-  const existingEditHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
   const newEditEntry = {
     edited_at: new Date().toISOString(),
     edit_reason: editReason.trim(),
@@ -271,6 +291,17 @@ export async function deleteMovementWithCompensationAction(
 
   if (fetchError || !movement) {
     return { ok: false, message: "Movimiento no encontrado" };
+  }
+
+  const existingEditHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
+  const isDeleted = existingEditHistory.some(entry => entry.deleted === true);
+  if (isDeleted) {
+    return { ok: false, message: "Este movimiento ya fue eliminado previamente" };
+  }
+
+  const isModified = existingEditHistory.some(entry => entry.new_movement_id !== undefined && entry.new_movement_id !== null);
+  if (isModified) {
+    return { ok: false, message: "No se puede eliminar un movimiento que ya ha sido modificado y reemplazado" };
   }
 
   const { data: items, error: itemsError } = await adminClient
@@ -337,11 +368,20 @@ export async function deleteMovementWithCompensationAction(
     return { ok: false, message: "Error al crear movimiento de compensación" };
   }
 
+  if (compensationId) {
+    const { error: markError } = await adminClient
+      .from("movements")
+      .update({ is_compensation: true })
+      .eq("id", compensationId);
+    if (markError) {
+      console.error("Error marking compensation movement:", markError);
+    }
+  }
+
   if (!compensationId) {
     return { ok: false, message: "No se pudo crear el movimiento de compensación" };
   }
 
-  const existingEditHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
   const deleteEntry = {
     deleted_at: new Date().toISOString(),
     deleted_by: roleCheck.id,

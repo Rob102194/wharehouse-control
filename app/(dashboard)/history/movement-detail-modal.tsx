@@ -131,6 +131,14 @@ export function MovementDetailModal({ movement, isOpen, onClose, warehouses }: M
 
   if (!movement) return null;
 
+  const deleteEntry = (movement.edit_history as Record<string, unknown>[])?.find(
+    (entry) => entry.deleted === true
+  );
+
+  const modifyEntry = (movement.edit_history as Record<string, unknown>[])?.find(
+    (entry) => entry.new_movement_id !== undefined && entry.new_movement_id !== null
+  );
+
   const typeInfo = MOVEMENT_LABELS[movement.movement_type] || { label: movement.movement_type, icon: "❓" };
   const originWarehouse = warehouses.find((w) => w.id === localOrigin);
   const destWarehouse = warehouses.find((w) => w.id === localDest);
@@ -197,6 +205,55 @@ export function MovementDetailModal({ movement, isOpen, onClose, warehouses }: M
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalle del movimiento" size="lg">
       <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+        {movement.is_deleted && deleteEntry && (
+          <div className="rounded-lg border border-red-200 bg-red-50/70 p-4 text-sm text-red-800">
+            <h4 className="font-semibold mb-1 flex items-center gap-1.5">
+              <span>🔴</span> OPERACIÓN ELIMINADA
+            </h4>
+            <p className="mb-2 text-xs text-red-700">Este movimiento fue eliminado y compensado en el stock.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-red-800 bg-white/60 p-2.5 rounded border border-red-100">
+              <div>
+                <strong>Fecha de eliminación:</strong> {typeof deleteEntry.deleted_at === "string" ? formatDate(deleteEntry.deleted_at) : ""}
+              </div>
+              {typeof deleteEntry.compensation_movement_id === "string" && (
+                <div>
+                  <strong>ID de Compensación:</strong> <span className="font-mono select-all bg-red-100/50 px-1 py-0.5 rounded">{deleteEntry.compensation_movement_id}</span>
+                </div>
+              )}
+              <div className="md:col-span-2">
+                <strong>Razón de eliminación:</strong> {typeof deleteEntry.delete_reason === "string" ? deleteEntry.delete_reason : ""}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {movement.is_modified && modifyEntry && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-800">
+            <h4 className="font-semibold mb-1 flex items-center gap-1.5">
+              <span>✏️</span> OPERACIÓN MODIFICADA
+            </h4>
+            <p className="mb-2 text-xs text-amber-700">Este movimiento fue editado y reemplazado por una nueva versión.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-amber-800 bg-white/60 p-2.5 rounded border border-amber-100">
+              <div>
+                <strong>Fecha de modificación:</strong> {typeof modifyEntry.edited_at === "string" ? formatDate(modifyEntry.edited_at) : ""}
+              </div>
+              {typeof modifyEntry.new_movement_id === "string" && (
+                <div>
+                  <strong>Nuevo Movimiento ID:</strong> <span className="font-mono select-all bg-amber-100/50 px-1 py-0.5 rounded">{modifyEntry.new_movement_id}</span>
+                </div>
+              )}
+              {typeof modifyEntry.compensation_movement_id === "string" && (
+                <div>
+                  <strong>ID de Compensación:</strong> <span className="font-mono select-all bg-amber-100/50 px-1 py-0.5 rounded">{modifyEntry.compensation_movement_id}</span>
+                </div>
+              )}
+              <div className="md:col-span-2">
+                <strong>Razón de edición:</strong> {typeof modifyEntry.edit_reason === "string" ? modifyEntry.edit_reason : ""}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold uppercase text-slate-700">
             {typeInfo.icon} {typeInfo.label}
@@ -235,13 +292,15 @@ export function MovementDetailModal({ movement, isOpen, onClose, warehouses }: M
         <div className="rounded-lg border border-slate-200 p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium uppercase text-slate-500">Almacenes</span>
-            <button
-              type="button"
-              onClick={() => setIsEditing(!isEditing)}
-              className="text-xs text-brand-700 hover:underline"
-            >
-              {isEditing ? "Cancelar" : "✏️ Editar"}
-            </button>
+            {!movement.is_deleted && !movement.is_modified && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className="text-xs text-brand-700 hover:underline"
+              >
+                {isEditing ? "Cancelar" : "✏️ Editar"}
+              </button>
+            )}
           </div>
 
           {isEditing ? (
@@ -503,21 +562,33 @@ export function MovementDetailModal({ movement, isOpen, onClose, warehouses }: M
             <SubmitButton />
           </form>
         ) : (
-          <div className="flex justify-between pt-2">
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
-            >
-              🗑️ Eliminar operación
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-900"
-            >
-              Editar movimiento
-            </button>
+          <div className="flex justify-end pt-2 gap-2">
+            {!movement.is_deleted && !movement.is_modified ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 mr-auto"
+                >
+                  🗑️ Eliminar operación
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-900"
+                >
+                  Editar movimiento
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Cerrar
+              </button>
+            )}
           </div>
         )}
 

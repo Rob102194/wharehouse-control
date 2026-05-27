@@ -259,7 +259,7 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
   let baseQuery = adminClient
     .from("movements")
     .select(
-      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at, edit_history",
+      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at, edit_history, is_compensation",
       { count: "exact" },
     )
     .order("created_at", { ascending: false });
@@ -292,9 +292,25 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
     return { movements: [], total: count ?? 0, offset, limit };
   }
 
+  const showAudit = filters.showAudit === true;
+
+  // Filter based on showAudit first
+  const auditedMovements = movements.filter((m) => {
+    const editHistory = (m.edit_history as Record<string, unknown>[]) ?? [];
+    const isDeleted = editHistory.some((entry) => entry.deleted === true);
+    const isCompensation = m.is_compensation === true;
+    const isModified = editHistory.some((entry) => entry.new_movement_id !== undefined && entry.new_movement_id !== null);
+
+    if (!showAudit) {
+      // Hide deleted, compensation, and modified movements
+      return !isDeleted && !isCompensation && !isModified;
+    }
+    return true;
+  });
+
   const normalizedSearch = filters.search?.trim().toLowerCase();
   const filteredMovements = normalizedSearch
-    ? movements.filter((movement) => {
+    ? auditedMovements.filter((movement) => {
         const haystack = [
           movement.id,
           movement.notes ?? "",
@@ -306,7 +322,7 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
 
         return haystack.includes(normalizedSearch);
       })
-    : movements;
+    : auditedMovements;
 
   const totalFiltered = filteredMovements.length;
   const paginatedMovements = filteredMovements.slice(offset, offset + limit);
@@ -373,6 +389,8 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
   return {
     movements: paginatedMovements.map((movement) => {
       const editHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
+      const isDeleted = editHistory.some((entry) => entry.deleted === true);
+      const isModified = editHistory.some((entry) => entry.new_movement_id !== undefined && entry.new_movement_id !== null);
       return {
         id: movement.id,
         movement_type: movement.movement_type,
@@ -391,6 +409,10 @@ export async function listMovementsForHistoryWithFilters(filters: MovementHistor
         adjustment_direction: movement.adjustment_direction,
         edit_count: editHistory.length,
         is_incident: movement.status === "received_with_incident",
+        is_deleted: isDeleted,
+        is_compensation: movement.is_compensation === true,
+        is_modified: isModified,
+        edit_history: movement.edit_history,
         items: itemsMap.get(movement.id) ?? [],
       };
     }),
@@ -406,7 +428,7 @@ export async function getMovementWithItems(movementId: string): Promise<Movement
   const { data: movement, error } = await adminClient
     .from("movements")
     .select(
-      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at, edit_history",
+      "id, movement_type, status, origin_warehouse_id, destination_warehouse_id, adjustment_direction, adjustment_reason, notes, incident_note, created_by, created_at, confirmed_at, received_by, received_at, edit_history, is_compensation",
     )
     .eq("id", movementId)
     .single();

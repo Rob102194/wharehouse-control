@@ -1,3 +1,5 @@
+"use client";
+
 import type { MovementStatus, MovementType } from "@/types/domain";
 import type { Warehouse } from "@/types/warehouse";
 
@@ -10,6 +12,7 @@ type HistoryFiltersProps = {
     search?: string;
     from?: string;
     to?: string;
+    showAudit?: boolean;
   };
 };
 
@@ -22,7 +25,7 @@ const movementTypeOptions: Array<{ value: MovementType; label: string }> = [
 
 const statusOptions: Array<{ value: MovementStatus; label: string }> = [
   { value: "confirmed", label: "Confirmado" },
-  { value: "in_transit", label: "En transito" },
+  { value: "in_transit", label: "En tránsito" },
   { value: "received", label: "Recibido" },
   { value: "received_with_incident", label: "Recibido con incidencia" },
 ];
@@ -64,7 +67,7 @@ export function HistoryFilters({ warehouses, values }: HistoryFiltersProps) {
         </label>
 
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">
-          Almacen
+          Almacén
           <select
             name="warehouseId"
             defaultValue={values.warehouseId ?? ""}
@@ -110,20 +113,40 @@ export function HistoryFilters({ warehouses, values }: HistoryFiltersProps) {
         </label>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          type="submit"
-          className="inline-flex h-9 items-center rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          Aplicar filtros
-        </button>
-        <a
-          href="/history"
-          className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Limpiar
-        </a>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            Aplicar filtros
+          </button>
+          <a
+            href="/history"
+            className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Limpiar
+          </a>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            name="showAudit"
+            value="true"
+            defaultChecked={values.showAudit}
+            onChange={(e) => e.currentTarget.form?.requestSubmit()}
+            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+          />
+          Mostrar registros de auditoría
+        </label>
       </div>
+
+      {values.showAudit && (
+        <div className="mt-3 p-3 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          ⚠️ <strong>Vista de auditoría activa</strong> — Se están mostrando compensaciones automáticas y movimientos eliminados.
+        </div>
+      )}
     </form>
   );
 }

@@ -16,6 +16,7 @@ export type MovementHistoryFilters = {
   to?: string;
   offset?: number;
   limit?: number;
+  showAudit?: boolean;
 };
 
 export type Movement = {
@@ -34,6 +35,7 @@ export type Movement = {
   received_by: string | null;
   received_at: string | null;
   edit_history: Record<string, unknown>[] | null;
+  is_compensation: boolean;
 };
 
 export type TransferInTransit = {
@@ -73,6 +75,10 @@ export type MovementHistoryRow = {
   adjustment_direction: AdjustmentDirection | null;
   edit_count: number;
   is_incident: boolean;
+  is_deleted: boolean;
+  is_compensation: boolean;
+  is_modified: boolean;
+  edit_history?: Record<string, unknown>[] | null;
   items: Array<{
     id?: string;
     product_variant_id: string;

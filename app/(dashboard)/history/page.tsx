@@ -38,6 +38,8 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   const statusRaw = asValue(params.status);
   const pageParam = asNumber(params.page);
   const limitParam = asNumber(params.limit);
+  const showAuditRaw = asValue(params.showAudit);
+  const showAudit = showAuditRaw === "true";
 
   const page = pageParam > 0 ? pageParam : 1;
   const limit = limitParam > 0 ? Math.min(limitParam, 100) : 20;
@@ -52,6 +54,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
     to: asValue(params.to),
     offset,
     limit,
+    showAudit,
   };
 
   const [paginatedResult, warehouses] = await Promise.all([

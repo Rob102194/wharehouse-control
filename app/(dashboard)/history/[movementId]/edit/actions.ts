@@ -35,6 +35,15 @@ export async function updateMovementAction(
   }
 
   const existingEditHistory = (movement.edit_history as Record<string, unknown>[]) ?? [];
+  const isDeleted = existingEditHistory.some(entry => entry.deleted === true);
+  if (isDeleted) {
+    return { ok: false, message: "No se puede editar un movimiento eliminado" };
+  }
+
+  const isModified = existingEditHistory.some(entry => entry.new_movement_id !== undefined && entry.new_movement_id !== null);
+  if (isModified) {
+    return { ok: false, message: "No se puede editar un movimiento que ya ha sido modificado y reemplazado" };
+  }
 
   const newEditEntry = {
     edited_at: new Date().toISOString(),
